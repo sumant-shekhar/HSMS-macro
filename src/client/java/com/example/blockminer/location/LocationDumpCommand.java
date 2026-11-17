@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,13 +35,19 @@ public final class LocationDumpCommand {
 				dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmdump")
 						.then(com.mojang.brigadier.builder.RequiredArgumentBuilder
 								.<FabricClientCommandSource, String>argument("label", StringArgumentType.word())
-								.executes(context -> capture(StringArgumentType.getString(context, "label"))))
+								.executes(context -> capture(
+										context.getSource(),
+										StringArgumentType.getString(context, "label")
+								)))
 		));
 	}
 
-	private static int capture(String label) {
+	private static int capture(FabricClientCommandSource source, String label) {
 		if (!VALID_LABEL.matcher(label).matches()) {
 			LOGGER.warn("[blockminer] /mmdump rejected an invalid label");
+			source.sendFeedback(Component.literal(
+					"Invalid /mmdump label. Use 1-48 letters, digits, dots, underscores or hyphens; start with a letter or digit."
+			));
 			return 0;
 		}
 
@@ -56,9 +63,11 @@ public final class LocationDumpCommand {
 					StandardOpenOption.CREATE_NEW,
 					StandardOpenOption.WRITE
 			);
+			source.sendFeedback(Component.literal("Wrote /mmdump capture: " + capture.getFileName()));
 			return 1;
-		} catch (IOException | IllegalStateException exception) {
+		} catch (IOException | IllegalStateException | SecurityException exception) {
 			LOGGER.error("[blockminer] failed to write /mmdump capture for label {}", label, exception);
+			source.sendFeedback(Component.literal("Failed to write /mmdump capture. See the client log for details."));
 			return 0;
 		}
 	}
@@ -78,7 +87,7 @@ public final class LocationDumpCommand {
 		output.append("# BlockMiner local TAB LIST and scoreboard capture\n");
 		output.append("# WARNING: TAB LIST rows contain other players' usernames. Review and redact before sharing.\n");
 		output.append("captured_at_utc=").append(Instant.now()).append('\n');
-		output.append("tab_row_raw_format=serialized Minecraft Component JSON preserving style\n");
+		output.append("tab_row_raw_format=serialized Minecraft Component JSON preserving style, or plain text if encoding fails\n");
 		output.append("tab_row_plain_format=Component.getString() text with styling removed\n");
 		output.append("parsed_location=").append(state.getCurrentLocation()).append('\n');
 		output.append("parsed_sub_location=").append(state.getCurrentSubLocation()).append('\n');
@@ -91,7 +100,7 @@ public final class LocationDumpCommand {
 			output.append("tab_rows[").append(index).append("].plain_text=")
 					.append(escape(row.plainText())).append('\n');
 		}
-		output.append("tab_footer.raw_component_json=").append(escape(footerRaw)).append('\n');
+		output.append("tab_footer.raw_component_json_or_plain_text=").append(escape(footerRaw)).append('\n');
 		output.append("tab_footer.lines.count=").append(footerLines.size()).append('\n');
 		for (int index = 0; index < footerLines.size(); index++) {
 			output.append("tab_footer.lines[").append(index).append("]=")

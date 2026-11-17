@@ -1,8 +1,24 @@
 package com.example.blockminer;
 
+import com.google.gson.JsonParseException;
+import com.example.blockminer.command.FeatureCommands;
+import com.example.blockminer.command.MacroCommands;
+import com.example.blockminer.command.RouteBuilderCommand;
+import com.example.blockminer.command.ConfigCommands;
+import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
+import com.example.blockminer.feature.impl.RouteNavigator;
+import com.example.blockminer.feature.FeatureManager;
+import com.example.blockminer.handler.RouteHandler;
+import com.example.blockminer.hud.CommissionHudOverlay;
+import com.example.blockminer.hud.DebugHudOverlay;
+import com.example.blockminer.hud.GlacialCommissionHudOverlay;
 import com.example.blockminer.location.LocationDebugCommand;
 import com.example.blockminer.location.LocationDumpCommand;
 import com.example.blockminer.location.LocationTracker;
+import com.example.blockminer.macro.MacroManager;
+import com.example.blockminer.pathfinder.PathfindingDebugCommands;
+import com.example.blockminer.util.Strings;
+import com.example.blockminer.util.RenderUtil;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -10,6 +26,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -27,15 +44,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.lwjgl.glfw.GLFW;
 
+import java.io.IOException;
 import java.util.Objects;
 
 public final class BlockMinerClient implements ClientModInitializer {
 	private static final String MOD_ID = "blockminer";
 	private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	private static final String PICKOBULUS_MESSAGE = "Pickobulus is now available!";
+	private static final String PICKOBULUS_MESSAGE = Strings.PICKOBULUS_AVAILABLE_CHAT;
 	private static final MinerState MINER = new MinerState();
 	private static final int AUTO_CLICK_INTERVAL_TICKS = 100;
 	private static KeyMapping openSettingsKey;
+	private static KeyMapping routeNavigationKey;
+	private static KeyMapping getStatsKey;
 	private static boolean openSettingsPending;
 	private static boolean openModeTabPending;
 	private static boolean autoClickEnabled;
@@ -44,16 +64,35 @@ public final class BlockMinerClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		LOGGER.info("[blockminer] initialized");
+		try {
+			Config.load();
+		} catch (IOException | JsonParseException | IllegalArgumentException | IllegalStateException exception) {
+			LOGGER.error("[blockminer] Could not load config; using in-memory defaults.", exception);
+		}
 		openSettingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.blockminer.open_settings",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_K,
 				KeyMapping.Category.MISC
 		));
+		routeNavigationKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.toggle_route_navigation",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_UNKNOWN,
+				KeyMapping.Category.MISC
+		));
+		getStatsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.retrieve_mining_stats",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_UNKNOWN,
+				KeyMapping.Category.MISC
+		));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			// TODO(verify): END_CLIENT_TICK has no partial-tick value; confirm tick stepping is sufficient for camera easing.
 			RotationHandler.getInstance().tick(client);
 			KeyBindUtil.tick();
+			PathfindingDebugCommands.tick(client);
+			MacroManager.getInstance().onTick(client);
 			MINER.tick(client);
 			BlockMiner.getInstance().tick(client);
 			tickAutoClick(client);
@@ -61,6 +100,16 @@ public final class BlockMinerClient implements ClientModInitializer {
 				openSettingsPending = false;
 				openModeTabPending = false;
 				client.setScreenAndShow(new MinerSettingsScreen(MINER));
+			}
+			if (routeNavigationKey.consumeClick()) {
+				if (RouteNavigator.getInstance().isRunning()) {
+					RouteNavigator.getInstance().stop();
+				} else {
+					RouteNavigator.getInstance().start(RouteHandler.getInstance().getSelectedRoute());
+				}
+			}
+			if (getStatsKey.consumeClick()) {
+				AutoGetStats.getInstance().startDefaultTasks();
 			}
 			if (openSettingsPending) {
 				openSettingsPending = false;
@@ -73,8 +122,14 @@ public final class BlockMinerClient implements ClientModInitializer {
 		RotationDebugCommands.register();
 		BlockSelectionDebugCommand.register();
 		LocationTracker.register();
+		FeatureManager.getInstance().registerHooks();
+		FeatureCommands.register();
+		MacroCommands.register();
+		ConfigCommands.register();
+		RouteBuilderCommand.register();
 		LocationDebugCommand.register();
 		LocationDumpCommand.register();
+		PathfindingDebugCommands.register();
 
 		ClientSendMessageEvents.ALLOW_CHAT.register(message -> {
 			String command = message.trim();
@@ -107,11 +162,13 @@ public final class BlockMinerClient implements ClientModInitializer {
 		});
 
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+			MacroManager.getInstance().onChat(message.getString());
 			if (message.getString().contains(PICKOBULUS_MESSAGE)) {
 				rightClickWhenEnabled();
 			}
 		});
 		ClientReceiveMessageEvents.CHAT.register((message, playerChatMessage, sender, boundChatType, timeStamp) -> {
+			MacroManager.getInstance().onChat(message.getString());
 			if (message.getString().contains(PICKOBULUS_MESSAGE)) {
 				rightClickWhenEnabled();
 			}
@@ -122,6 +179,25 @@ public final class BlockMinerClient implements ClientModInitializer {
 				Identifier.fromNamespaceAndPath(MOD_ID, "status"),
 				BlockMinerClient::renderStatus
 		);
+		HudElementRegistry.attachElementBefore(
+				VanillaHudElements.CHAT,
+				Identifier.fromNamespaceAndPath(MOD_ID, "commission_hud"),
+				(graphics, deltaTracker) -> CommissionHudOverlay.render(graphics)
+		);
+		HudElementRegistry.attachElementBefore(
+				VanillaHudElements.CHAT,
+				Identifier.fromNamespaceAndPath(MOD_ID, "glacial_commission_hud"),
+				(graphics, deltaTracker) -> GlacialCommissionHudOverlay.render(graphics)
+		);
+		HudElementRegistry.attachElementBefore(
+				VanillaHudElements.CHAT,
+				Identifier.fromNamespaceAndPath(MOD_ID, "debug_hud"),
+				(graphics, deltaTracker) -> DebugHudOverlay.render(graphics)
+		);
+		LevelRenderEvents.BEFORE_GIZMOS.register(context -> {
+			MacroManager.getInstance().onWorldRender();
+			RenderUtil.renderQueued();
+		});
 	}
 
 	private static boolean isBlockMinerChatCommand(String command) {
@@ -187,6 +263,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 
 	private static void renderStatus(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
 		Minecraft client = Minecraft.getInstance();
+		MacroManager.getInstance().onOverlayRender(graphics, deltaTracker);
 		if (!MINER.isEnabled() || client.gui.screen() != null) {
 			return;
 		}

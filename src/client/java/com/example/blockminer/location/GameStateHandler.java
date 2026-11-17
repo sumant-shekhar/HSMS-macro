@@ -11,6 +11,7 @@ public final class GameStateHandler {
 	private String rawSubLocationLine;
 	private String cleanedSubLocation;
 	private String areaName;
+	private String serverIp = "";
 	private String scoreboardTitle = "";
 	private List<String> tabList = List.of();
 	private List<String> scoreboardLines = List.of();
@@ -72,6 +73,10 @@ public final class GameStateHandler {
 		cold = 0;
 	}
 
+	void setServerIp(String serverIp) {
+		this.serverIp = serverIp;
+	}
+
 	public void onMessage(String message) {
 		if (LocationTextParser.isColdResetMessage(message)) {
 			cold = 0;
@@ -130,6 +135,10 @@ public final class GameStateHandler {
 
 	public String getAreaName() {
 		return areaName;
+	}
+
+	public String getServerIp() {
+		return serverIp;
 	}
 
 	public String getRawSubLocationLine() {

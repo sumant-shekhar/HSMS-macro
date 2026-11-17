@@ -3,7 +3,10 @@
   "package": "com.example.blockminer.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "MixinAbstractContainerScreen",
+    "MixinMouseHandler",
     "StainedGlassPaneCollisionMixin",
+    "accessor.KeyMappingAccessor",
     "location.PlayerTabOverlayAccessor"
   ],
   "injectors": {

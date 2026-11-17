@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 
 public final class LocationTracker {
 	private static final GameStateHandler GAME_STATE = new GameStateHandler();
@@ -13,7 +14,13 @@ public final class LocationTracker {
 	}
 
 	public static void register() {
-		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> refresh(client));
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+			ServerData serverData = client.getCurrentServer();
+			if (serverData != null && serverData.ip != null) {
+				GAME_STATE.setServerIp(serverData.ip);
+			}
+			refresh(client);
+		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			hadWorld = false;
 			GAME_STATE.reset();

@@ -46,6 +46,16 @@ public final class BlockSelectionDebugCommand {
 								context.getSource().sendFeedback(Component.literal("Block selection miner stopped."));
 								return 1;
 							})));
+
+			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmfullblock")
+					.executes(context -> {
+						Config.miscFullBlock = !Config.miscFullBlock;
+						context.getSource().sendFeedback(Component.literal(
+								"Stained-glass pane full collision "
+										+ (Config.miscFullBlock ? "enabled." : "disabled.")
+						));
+						return 1;
+					}));
 		});
 	}
 

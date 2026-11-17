@@ -53,8 +53,9 @@ public final class LocationInputAdapter {
 	private static TabListRow tabListRow(Component component) {
 		String rawComponentJson = ComponentSerialization.CODEC
 				.encodeStart(JsonOps.INSTANCE, component)
-				.getOrThrow()
-				.toString();
+				.result()
+				.map(Object::toString)
+				.orElseGet(component::getString);
 		return new TabListRow(rawComponentJson, component.getString());
 	}
 
@@ -100,8 +101,9 @@ public final class LocationInputAdapter {
 		Component footer = ((PlayerTabOverlayAccessor) client.gui.hud.getTabList()).blockminer$getFooter();
 		return footer == null ? "" : ComponentSerialization.CODEC
 				.encodeStart(JsonOps.INSTANCE, footer)
-				.getOrThrow()
-				.toString();
+				.result()
+				.map(Object::toString)
+				.orElseGet(footer::getString);
 	}
 
 	public record TabListRow(String rawText, String plainText) {

@@ -44,6 +44,14 @@ tasks.register('pathfindingSelfTest', JavaExec) {
 	mainClass = 'com.example.blockminer.pathfinder.PathfindingSelfTest'
 }
 
+tasks.register('pathfindingAdapterSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs synthetic self-tests for the Minecraft pathfinding snapshot and move adapter.'
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.example.blockminer.pathfinder.PathfindingAdapterSelfTest'
+}
+
 tasks.register('minHeapSelfTest', JavaExec) {
 	group = 'verification'
 	description = 'Runs randomized synthetic self-tests for the block-selection min-heap.'
@@ -68,15 +76,34 @@ tasks.register('commissionTabListParserSelfTest', JavaExec) {
 	mainClass = 'com.example.blockminer.commission.CommissionTabListParserSelfTest'
 }
 
+tasks.register('routeGraphJsonSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Loads and round-trips the bundled route and graph JSON resources.'
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.example.blockminer.RouteGraphJsonSelfTest'
+}
+
+tasks.register('configJsonRoundTripSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Verifies that configuration values survive a pure Gson JSON round trip.'
+	dependsOn tasks.named('testClasses'), tasks.named('compileClientJava')
+	classpath = sourceSets.test.runtimeClasspath + sourceSets.client.runtimeClasspath
+	mainClass = 'com.example.blockminer.ConfigJsonRoundTripSelfTest'
+}
+
 tasks.named('test', Test) {
 	failOnNoDiscoveredTests = false
 }
 
 tasks.named('check') {
 	dependsOn tasks.named('pathfindingSelfTest')
+	dependsOn tasks.named('pathfindingAdapterSelfTest')
 	dependsOn tasks.named('minHeapSelfTest')
 	dependsOn tasks.named('locationTextParserSelfTest')
 	dependsOn tasks.named('commissionTabListParserSelfTest')
+	dependsOn tasks.named('routeGraphJsonSelfTest')
+	dependsOn tasks.named('configJsonRoundTripSelfTest')
 }
 
 def modJarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
