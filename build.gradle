@@ -1,0 +1,126 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+repositories {
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"blockminer" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+	def modVersion = project.version
+	inputs.property "version", modVersion
+
+	filesMatching("fabric.mod.json") {
+		expand "version": modVersion
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 25
+}
+
+tasks.register('pathfindingSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs synthetic self-tests for the pathfinding algorithm.'
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.example.blockminer.pathfinder.PathfindingSelfTest'
+}
+
+tasks.register('minHeapSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs randomized synthetic self-tests for the block-selection min-heap.'
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.example.blockminer.heap.MinHeapSelfTest'
+}
+
+tasks.register('locationTextParserSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs synthetic self-tests for location and sub-location parsing.'
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.example.blockminer.location.LocationTextParserSelfTest'
+}
+
+tasks.register('commissionTabListParserSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs synthetic self-tests for commission tab-list parsing.'
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.example.blockminer.commission.CommissionTabListParserSelfTest'
+}
+
+tasks.named('test', Test) {
+	failOnNoDiscoveredTests = false
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('pathfindingSelfTest')
+	dependsOn tasks.named('minHeapSelfTest')
+	dependsOn tasks.named('locationTextParserSelfTest')
+	dependsOn tasks.named('commissionTabListParserSelfTest')
+}
+
+def modJarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
+def modsDirProperty = providers.gradleProperty('modsDir')
+
+tasks.register('printJar') {
+	group = 'build'
+	description = 'Prints the remapped BlockMiner jar to install.'
+	dependsOn 'jar'
+	doLast {
+		println(modJarFile.get().asFile.absolutePath)
+	}
+}
+
+tasks.register('installMod') {
+	group = 'build'
+	description = 'Replaces BlockMiner jars in the mods directory supplied with -PmodsDir=...'
+	dependsOn 'jar'
+	doLast {
+		def modsDirPath = modsDirProperty.orNull
+		if (modsDirPath == null || modsDirPath.trim().isEmpty()) {
+			throw new GradleException('Pass an existing Prism mods directory with -PmodsDir=/path/to/mods')
+		}
+
+		def modsDir = java.nio.file.Paths.get(modsDirPath).toAbsolutePath().normalize()
+		if (!java.nio.file.Files.isDirectory(modsDir)) {
+			throw new GradleException("Prism mods directory does not exist: ${modsDir}")
+		}
+
+		def jarPath = modJarFile.get().asFile.toPath()
+		java.nio.file.Files.newDirectoryStream(modsDir, 'blockminer*.jar').withCloseable { jars ->
+			jars.each { java.nio.file.Files.delete(it) }
+		}
+		java.nio.file.Files.copy(
+			jarPath,
+			modsDir.resolve(jarPath.fileName),
+			java.nio.file.StandardCopyOption.REPLACE_EXISTING
+		)
+		println("Installed ${jarPath.fileName} to ${modsDir}")
+	}
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
