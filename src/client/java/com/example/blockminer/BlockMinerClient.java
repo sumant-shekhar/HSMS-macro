@@ -34,11 +34,7 @@ import net.minecraft.client.input.KeyEvent;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -60,6 +56,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 	private static KeyMapping routeNavigationKey;
 	private static KeyMapping getStatsKey;
 	private static boolean openConfigPending;
+	private static boolean openModePending;
 	private static boolean autoClickEnabled;
 	private static int autoClickTicks;
 
@@ -102,7 +99,12 @@ public final class BlockMinerClient implements ClientModInitializer {
 			BlockMiner.getInstance().tick(client);
 			tickAutoClick(client);
 			if (openConfigKey.consumeClick()) {
-				client.setScreenAndShow(new BlockMinerScreen());
+				if (client.gui.screen() == null) {
+					releaseAllKeys();
+					client.setScreenAndShow(new MinerSettingsScreen(MINER));
+				} else if (client.gui.screen() instanceof MinerSettingsScreen) {
+					client.gui.screen().onClose();
+				}
 			}
 			if (routeNavigationKey.consumeClick()) {
 				if (client.player != null && client.level != null && client.gui.screen() == null) {
@@ -120,7 +122,11 @@ public final class BlockMinerClient implements ClientModInitializer {
 			}
 			if (openConfigPending) {
 				openConfigPending = false;
-				client.setScreenAndShow(new BlockMinerScreen());
+				if (client.gui.screen() == null) {
+					releaseAllKeys();
+					client.setScreenAndShow(new MinerSettingsScreen(MINER, openModePending));
+				}
+				openModePending = false;
 			}
 		});
 		RotationDebugCommands.register();
@@ -141,9 +147,13 @@ public final class BlockMinerClient implements ClientModInitializer {
 				LOGGER.info("[blockminer] received chat command: {}", command);
 			}
 			if ("!ore".equalsIgnoreCase(command)
-					|| "!mithril settings".equalsIgnoreCase(command)
-					|| "$mithril settings".equalsIgnoreCase(command)
 					|| "$mithril ore".equalsIgnoreCase(command)) {
+				openModePending = true;
+				openConfigPending = true;
+				return false;
+			}
+			if ("!mithril settings".equalsIgnoreCase(command)
+					|| "$mithril settings".equalsIgnoreCase(command)) {
 				openConfigPending = true;
 				return false;
 			}
@@ -221,6 +231,42 @@ public final class BlockMinerClient implements ClientModInitializer {
 		return openConfigKey;
 	}
 
+	public static void setLeftClick(boolean pressed) {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.options != null && client.options.keyAttack != null) {
+			KeyMapping.set(client.options.keyAttack.getDefaultKey(), pressed);
+			client.options.keyAttack.setDown(pressed);
+		}
+	}
+
+	public static void triggerLeftClick() {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.options != null && client.options.keyAttack != null) {
+			KeyMapping.click(client.options.keyAttack.getDefaultKey());
+		}
+	}
+
+	public static void setRightClick(boolean pressed) {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.options != null && client.options.keyUse != null) {
+			KeyMapping.set(client.options.keyUse.getDefaultKey(), pressed);
+			client.options.keyUse.setDown(pressed);
+		}
+	}
+
+	public static void triggerRightClick() {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.options != null && client.options.keyUse != null) {
+			KeyMapping.click(client.options.keyUse.getDefaultKey());
+		}
+	}
+
+	public static void releaseAllKeys() {
+		setLeftClick(false);
+		setRightClick(false);
+		KeyMapping.releaseAll();
+	}
+
 	public static boolean handleRawKeyPress(KeyEvent event) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
@@ -237,9 +283,10 @@ public final class BlockMinerClient implements ClientModInitializer {
 
 		if (matchesConfig) {
 			if (client.gui.screen() == null) {
-				client.setScreenAndShow(new BlockMinerScreen());
+				releaseAllKeys();
+				client.setScreenAndShow(new MinerSettingsScreen(MINER));
 				return true;
-			} else if (client.gui.screen() instanceof BlockMinerScreen) {
+			} else if (client.gui.screen() instanceof MinerSettingsScreen) {
 				client.gui.screen().onClose();
 				return true;
 			}
@@ -249,6 +296,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 
 	public static void stopAll(Minecraft client) {
 		MINER.stop(client);
+		releaseAllKeys();
 		MacroManager.getInstance().disable();
 		RouteNavigator.getInstance().stop();
 		AutoMobKiller.getInstance().stop();
@@ -283,32 +331,22 @@ public final class BlockMinerClient implements ClientModInitializer {
 	}
 
 	private static void tickAutoClick(Minecraft client) {
-		if (!autoClickEnabled || client.player == null || client.gameMode == null || client.gui.screen() != null) {
+		if (!autoClickEnabled || client.player == null || client.gui.screen() != null) {
 			return;
 		}
-		LocalPlayer player = Objects.requireNonNull(client.player);
-		MultiPlayerGameMode gameMode = Objects.requireNonNull(client.gameMode);
-
 		if (++autoClickTicks >= autoClickIntervalTicks) {
 			autoClickTicks = 0;
-			gameMode.useItem(player, InteractionHand.MAIN_HAND);
+			triggerRightClick();
 		}
 	}
 
 	private static void rightClickWhenEnabled() {
 		Minecraft client = Minecraft.getInstance();
 		client.execute(() -> {
-			LocalPlayer player = client.player;
-			MultiPlayerGameMode gameMode = client.gameMode;
-			if (!MINER.isEnabled() || player == null || gameMode == null) {
+			if (!MINER.isEnabled() || client.player == null) {
 				return;
 			}
-
-			if (client.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
-				gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
-			} else {
-				gameMode.useItem(player, InteractionHand.MAIN_HAND);
-			}
+			triggerRightClick();
 		});
 	}
 

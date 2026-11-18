@@ -1,5 +1,5 @@
 {
-	"key.blockminer.open_config": "Open Mighty Miner GUI",
+	"key.blockminer.open_config": "Open Block Miner Settings",
 	"key.blockminer.toggle_route_navigation": "Toggle Route Navigation",
 	"key.blockminer.retrieve_mining_stats": "Retrieve Mining Stats"
 }

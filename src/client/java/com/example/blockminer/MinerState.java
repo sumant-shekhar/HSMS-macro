@@ -2,10 +2,11 @@ package com.example.blockminer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -28,8 +29,28 @@ final class MinerState {
 	private MiningTargets.Target target;
 	private int ticksOnTarget;
 	private long clientTick;
-	private boolean destroying;
+	private boolean mining;
 	private String searchReason = "no target in range (4 blocks)";
+
+	static void setLeftClick(boolean pressed) {
+		BlockMinerClient.setLeftClick(pressed);
+	}
+
+	static void triggerLeftClick() {
+		BlockMinerClient.triggerLeftClick();
+	}
+
+	static void setRightClick(boolean pressed) {
+		BlockMinerClient.setRightClick(pressed);
+	}
+
+	static void triggerRightClick() {
+		BlockMinerClient.triggerRightClick();
+	}
+
+	static void releaseAllKeys() {
+		BlockMinerClient.releaseAllKeys();
+	}
 
 	boolean isEnabled() {
 		return enabled;
@@ -73,6 +94,7 @@ final class MinerState {
 		enabled = false;
 		blacklistUntilTick.clear();
 		clearTarget(client);
+		releaseAllKeys();
 	}
 
 	boolean toggle(Minecraft client) {
@@ -87,9 +109,8 @@ final class MinerState {
 	void tick(Minecraft client) {
 		ClientLevel level = client.level;
 		LocalPlayer player = client.player;
-		MultiPlayerGameMode gameMode = client.gameMode;
 		if (!enabled) {
-			releaseDestroy(client);
+			releaseMining();
 			return;
 		}
 
@@ -97,26 +118,29 @@ final class MinerState {
 		removeExpiredBlacklistEntries();
 
 		if (client.gui.screen() != null) {
-			releaseDestroy(client);
+			releaseMining();
+			releaseAllKeys();
 			clearTarget(client);
 
 			if (!(client.gui.screen() instanceof ChatScreen)
-					&& !(client.gui.screen() instanceof BlockMinerScreen)) {
+					&& !(client.gui.screen() instanceof MinerSettingsScreen)) {
 				stop(client);
 			}
 			return;
 		}
 
-		if (player == null || level == null || !player.isAlive() || gameMode == null) {
+		if (player == null || level == null || !player.isAlive()) {
 			stop(client);
 			return;
 		}
 		level = Objects.requireNonNull(level);
 		player = Objects.requireNonNull(player);
-		gameMode = Objects.requireNonNull(gameMode);
 
 		if (target != null) {
-			if (!MiningTargets.isTargetBlock(level.getBlockState(target.position()).getBlock(), selectedMode)
+			BlockState targetState = level.getBlockState(target.position());
+			if (targetState.isAir()
+					|| targetState.is(Blocks.BEDROCK)
+					|| !MiningTargets.isTargetBlock(targetState.getBlock(), selectedMode)
 					|| !MiningTargets.isInReach(player, target.position())
 					|| !MiningTargets.isInView(player, target.aimPoint())) {
 				clearTarget(client);
@@ -134,7 +158,7 @@ final class MinerState {
 				ticksOnTarget = 0;
 			} else {
 				searchReason = search.reason();
-				releaseDestroy(client);
+				releaseMining();
 				if (clientTick % 20 == 0) {
 					LOGGER.info("[blockminer] {}", searchReason);
 				}
@@ -150,28 +174,18 @@ final class MinerState {
 
 		boolean aimed = RotationHelper.rotateToward(player, target.aimPoint());
 
-		/*
-		 * IMPORTANT: never manipulate Minecraft's KeyMapping state here.
-		 * That used to call keyAttack.setDown(...), which can interfere with
-		 * normal user input. Instead, use the game-mode block-destruction API
-		 * directly. This leaves W/A/S/D, Sprint, Jump, Shift, Ctrl, Backtick,
-		 * and the physical mouse bindings under normal Minecraft control.
-		 */
 		if (!aimed || !(client.hitResult instanceof BlockHitResult hit)
 				|| hit.getType() != HitResult.Type.BLOCK
 				|| !hit.getBlockPos().equals(target.position())) {
-			releaseDestroy(client);
+			releaseMining();
 			return;
 		}
 
-		if (!destroying) {
-			destroying = gameMode.startDestroyBlock(target.position(), hit.getDirection());
-			if (destroying) {
-				LOGGER.info("[blockminer] started breaking block at {}", target.position());
-			}
-		} else if (!gameMode.continueDestroyBlock(target.position(), hit.getDirection())) {
-			releaseDestroy(client);
+		if (!mining) {
+			mining = true;
+			LOGGER.info("[blockminer] started breaking block at {}", target.position());
 		}
+		setLeftClick(true);
 	}
 
 	private void removeExpiredBlacklistEntries() {
@@ -184,16 +198,16 @@ final class MinerState {
 	}
 
 	private void clearTarget(Minecraft client) {
-		releaseDestroy(client);
+		releaseMining();
 		target = null;
 		ticksOnTarget = 0;
 	}
 
-	private void releaseDestroy(Minecraft client) {
-		if (destroying && client.gameMode != null) {
-			client.gameMode.stopDestroyBlock();
+	private void releaseMining() {
+		setLeftClick(false);
+		if (mining) {
 			LOGGER.info("[blockminer] stopped breaking block at {}", target == null ? "unknown" : target.position());
 		}
-		destroying = false;
+		mining = false;
 	}
 }
