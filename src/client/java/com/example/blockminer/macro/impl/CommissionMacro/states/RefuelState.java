@@ -3,6 +3,9 @@ package com.example.blockminer.macro.impl.CommissionMacro.states;
 import com.example.blockminer.Config;
 import com.example.blockminer.feature.impl.AutoDrillRefuel.AutoDrillRefuel;
 import com.example.blockminer.macro.impl.CommissionMacro.CommissionMacro;
+import com.example.blockminer.util.InventoryUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.ItemStack;
 
 public final class RefuelState implements CommissionMacroState {
 	@Override
@@ -12,7 +15,15 @@ public final class RefuelState implements CommissionMacroState {
 			macro.disable("Select a valid drill-refuel fuel type.");
 			return;
 		}
-		AutoDrillRefuel.getInstance().start(Config.miningTool, fuels[Config.refuelMachineFuel]);
+		String toolName = Config.miningTool;
+		Minecraft client = Minecraft.getInstance();
+		if (toolName.isBlank() && client.player != null) {
+			ItemStack item = client.player.getInventory().getItem(InventoryUtil.MINING_TOOL_SLOT);
+			if (!item.isEmpty()) {
+				toolName = item.getHoverName().getString();
+			}
+		}
+		AutoDrillRefuel.getInstance().start(toolName, fuels[Config.refuelMachineFuel]);
 	}
 
 	@Override

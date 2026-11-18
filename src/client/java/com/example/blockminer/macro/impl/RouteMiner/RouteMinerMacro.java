@@ -62,16 +62,15 @@ public final class RouteMinerMacro extends AbstractMacro {
 			disable("The selected route is empty. Add route waypoints before starting Route Miner.");
 			return;
 		}
-		if (com.example.blockminer.Config.miningTool.isBlank()) {
-			disable("Set Config.miningTool before starting Route Miner.");
+		if (mc.player != null && !FeatureInventory.isMiningToolPresent(mc)) {
+			disable("Mining tool must be in hotbar slot 2.");
 			return;
 		}
-		List<String> missingItems = getNecessaryItems().stream()
-				.filter(item -> FeatureInventory.findHotbarItem(mc, item) == -1)
-				.toList();
-		if (mc.player == null || !missingItems.isEmpty()) {
-			disable("Put the required mining and travel items in the hotbar: "
-					+ String.join(", ", missingItems));
+		boolean needsTeleport = route.getWaypoints().stream().anyMatch(waypoint ->
+				waypoint.getTransportMethod() == WaypointType.AOTV
+						|| waypoint.getTransportMethod() == WaypointType.ETHERWARP);
+		if (needsTeleport && mc.player != null && !FeatureInventory.isTeleportToolPresent(mc)) {
+			disable("Teleport tool must be in hotbar slot 3.");
 			return;
 		}
 		miningSpeed = 0;

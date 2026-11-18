@@ -153,7 +153,20 @@ public final class FeatureCommands {
 																		.toList(),
 																StringArgumentType.getString(context, "weapon"));
 														return 1;
-													}))))
+													})))
+									.then(com.mojang.brigadier.builder.RequiredArgumentBuilder
+											.<FabricClientCommandSource, String>argument(
+													"mobs", StringArgumentType.greedyString())
+											.executes(context -> {
+												String names = StringArgumentType.getString(context, "mobs");
+												AutoMobKiller.getInstance().start(
+														java.util.Arrays.stream(names.split(","))
+																.map(String::trim)
+																.filter(name -> !name.isEmpty())
+																.toList(),
+														null);
+												return 1;
+											})))
 							.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("stop")
 									.executes(context -> {
 										AutoMobKiller.getInstance().stop();

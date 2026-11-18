@@ -39,9 +39,7 @@ public final class MiningMacro extends AbstractMacro {
 
 	@Override
 	public void onEnable() {
-		if (!Config.miningTool.isBlank()) {
-			FeatureInventory.holdHotbarItem(Minecraft.getInstance(), Config.miningTool);
-		}
+		FeatureInventory.holdMiningTool(Minecraft.getInstance());
 		miner.stop();
 		AutoGetStats.getInstance().stop();
 		miningSpeed = StatsUtil.getMiningSpeed();

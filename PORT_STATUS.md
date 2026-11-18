@@ -17,6 +17,29 @@ All eight modules (01, 06, 04, 03, 02, 08, 07, and 05) are marked code-complete 
 
 ## Build and test notes
 
+- **Hotbar Slot Layout & Dwarven Mines Emissary Locations (2026-11-18):**
+  - **Fixed Hotbar Slot Layout:**
+    - Standardized hotbar tool slots:
+      - Slot 1 (hotbar index `0`): Weapon for killing (`InventoryUtil.WEAPON_SLOT`)
+      - Slot 2 (hotbar index `1`): Mining tool (`InventoryUtil.MINING_TOOL_SLOT`)
+      - Slot 3 (hotbar index `2`): Teleport tool (`InventoryUtil.TELEPORT_TOOL_SLOT` for AOTE / AOTV / Etherwarp)
+    - Added dedicated helper methods to `InventoryUtil` and `FeatureInventory`: `holdWeapon`, `holdMiningTool`, `holdTeleportTool`, `isWeaponPresent`, `isMiningToolPresent`, `isTeleportToolPresent`.
+    - Updated `AutoMobKiller` and `KillState` to select hotbar slot 1 for attacking mobs, and updated `/mmfeature mobkill start` to allow omitting weapon name (defaulting to slot 1 weapon).
+    - Updated `RouteNavigator`, `RouteMiner/MovingState`, and `GlacialMacro/PathfindingState` to select hotbar slot 3 before performing AOTV / Etherwarp teleports and sneaking.
+    - Updated `CommissionMacro`, `RouteMinerMacro`, `GlacialMacro`, `MiningMacro`, and `AutoCommissionClaim` to select slot 2 for mining tools and slot 1 for slayer weapons without requiring explicit `Config` strings when slots are populated.
+  - **Comprehensive Dwarven Mines Emissary Support:**
+    - Added all 7 Dwarven Mines Emissary coordinates from official SkyBlock Wiki into `CommissionUtil.EMISSARY_POSITIONS`:
+      - Carlton (Rampart's Quarry): `(-72.50, 153.00, -10.50)`
+      - Ceanna (Cliffside Veins): `(42.50, 134.50, 22.50)`
+      - Wilson (Royal Mines): `(171.50, 150.00, 31.50)`
+      - Lilith (Lava Springs): `(58.50, 198.00, -8.50)`
+      - Fraiser (Upper Mines): `(-132.50, 174.00, -50.50)`
+      - Eliza (Dwarven Village): `(-37.50, 200.00, -131.50)`
+      - Braum (Crystal Hollows Entrance / Great Ice Wall): `(89.50, 198.00, -92.50)`
+    - Added `EMISSARY_ELIZA_NAME` and `EMISSARY_BRAUM_NAME` to `Strings.java`.
+    - Added walk waypoints for Eliza `{-37, 200, -130}` and Braum `{89, 198, -91}` to `SubLocation.THE_FORGE` in `Commission.java` so `COMMISSION_CLAIM` can path to them.
+    - Upgraded `CommissionUtil.getEmissary` distance check from strict `< 0.01D` to `< 16.0D` (4-block radius) with closest-entity matching to account for elevation and server coordinate discrepancies.
+    - Added fallback NPC name matching (`isEmissaryName`) in `CommissionUtil.getClosestEmissary()` for seamless in-game detection of loaded emissaries.
 - **Click, Stats & Pathfinder Fixes (2026-11-18):**
   - **Click & Hold-Click Overhaul:** `KeyMappingAccessor` now provides both bound-key and `clickCount` access. `KeyBindUtil.setKeyBindState` triggers an initial click on unpressed-to-pressed transition to satisfy `Minecraft.handleKeybinds()` `consumeClick()` requirement for `startAttack()`, and synchronizes the bound `InputConstants.Key` with `key.setDown(true)` so vanilla continuous breaking (`continueAttack(true)`) runs uninterrupted. Timed key releases now call `setKeyBindState(key, false)` cleanly. `MinerState` incorporates hysteresis via `lookAwayTicks <= 5`, preventing momentary crosshair jitter from resetting Mithril breaking progress. `BreakingState` removed duplicate `MultiPlayerGameMode` direct packet calls so vanilla input processing drives breaking natively.
   - **Eliminated Forced Menu Stats Checks:** Created `StatsUtil.getMiningSpeed()` which parses live Mining Speed directly from Hypixel SkyBlock tablist rows, falling back to `Config.defaultMiningSpeed > 0 ? Config.defaultMiningSpeed : 600`. Updated all four macros (`MiningMacro`, `CommissionMacro`, `RouteMiner`, `GlacialMacro`) and their `StartingState` / `GettingStatsState` machines to immediately adopt `StatsUtil.getMiningSpeed()` without opening `/sbmenu` or failing on inventory lore timeouts.

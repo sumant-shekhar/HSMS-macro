@@ -34,7 +34,8 @@ public enum Commission {
 	private static final Map<SubLocation, List<RouteWaypoint>> WAYPOINTS = Map.of(
 			SubLocation.FORGE_BASIN, waypoints(new int[][]{{-9, 144, -20}}),
 			SubLocation.THE_FORGE, waypoints(new int[][]{
-					{44, 134, 21}, {58, 197, -11}, {171, 149, 33}, {-75, 152, -11}, {-131, 173, -52}
+					{44, 134, 21}, {58, 197, -11}, {171, 149, 33}, {-75, 152, -11}, {-131, 173, -52},
+					{-37, 200, -130}, {89, 198, -91}
 			}),
 			SubLocation.CLIFFSIDE_VEINS, waypoints(new int[][]{{93, 144, 51}}),
 			SubLocation.ROYAL_MINES, waypoints(new int[][]{{115, 153, 83}}),

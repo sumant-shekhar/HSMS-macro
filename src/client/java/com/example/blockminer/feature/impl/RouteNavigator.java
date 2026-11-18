@@ -16,6 +16,7 @@ import com.example.blockminer.pathfinder.PathExecutor;
 import com.example.blockminer.pathfinder.PathResult;
 import com.example.blockminer.pathfinder.PathfindingSnapshot;
 import com.example.blockminer.pathfinder.WorldMoveCalculator;
+import com.example.blockminer.util.FeatureInventory;
 import com.example.blockminer.util.Logger;
 import com.example.blockminer.util.helper.route.Route;
 import com.example.blockminer.util.helper.route.RouteWaypoint;
@@ -219,6 +220,7 @@ public final class RouteNavigator extends AbstractFeature {
 			requestWalkingPath(client, target);
 			return;
 		}
+		FeatureInventory.holdTeleportTool(client);
 		if (client.level.getBlockState(target).getBlock() == Blocks.SNOW) {
 			target = target.offset(0, -1, 0);
 		}
@@ -274,6 +276,7 @@ public final class RouteNavigator extends AbstractFeature {
 			fail(NavError.TIME_FAIL, "Cannot use the travel item without an active game mode.");
 			return;
 		}
+		FeatureInventory.holdTeleportTool(client);
 		positionBeforeTeleport = client.player.position();
 		client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
 		KeyBindUtil.setKeyBindState(client.options.keyShift, false);

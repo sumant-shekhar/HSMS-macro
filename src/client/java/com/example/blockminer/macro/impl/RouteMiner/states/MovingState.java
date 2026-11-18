@@ -18,9 +18,8 @@ public final class MovingState implements RouteMinerState {
 		RouteWaypoint target = macro.getTargetWaypoint();
 		if ((target.getTransportMethod() == WaypointType.AOTV
 				|| target.getTransportMethod() == WaypointType.ETHERWARP)
-				&& !FeatureInventory.holdHotbarItem(
-						Minecraft.getInstance(), Strings.ASPECT_OF_THE_VOID_ITEM_NAME)) {
-			macro.disable("The route waypoint requires Aspect of the Void in the hotbar.");
+				&& !FeatureInventory.holdTeleportTool(Minecraft.getInstance())) {
+			macro.disable("Teleport tool is missing from hotbar slot 3.");
 			return;
 		}
 		RouteNavigator.getInstance().start(new Route(List.of(target)));

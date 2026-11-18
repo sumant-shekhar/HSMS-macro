@@ -20,7 +20,7 @@ public final class PathfindingState implements GlacialMacroState {
 
 	@Override
 	public void onStart(GlacialMacro macro) {
-		FeatureInventory.holdHotbarItem(Minecraft.getInstance(), Strings.ASPECT_OF_THE_VOID_ITEM_NAME);
+		FeatureInventory.holdTeleportTool(Minecraft.getInstance());
 		RouteNavigator.getInstance().stop();
 		macro.updateMiningTasks();
 		navigating = false;
@@ -72,8 +72,8 @@ public final class PathfindingState implements GlacialMacroState {
 				waypoint.getTransportMethod() == WaypointType.ETHERWARP
 						|| waypoint.getTransportMethod() == WaypointType.AOTV);
 		if (needsEtherwarp
-				&& !FeatureInventory.holdHotbarItem(Minecraft.getInstance(), Strings.ASPECT_OF_THE_VOID_ITEM_NAME)) {
-			macro.disable("A required route travel item is not available in the hotbar.");
+				&& !FeatureInventory.holdTeleportTool(Minecraft.getInstance())) {
+			macro.disable("Teleport tool is missing from hotbar slot 3.");
 			return this;
 		}
 		RouteNavigator.getInstance().start(new Route(path));

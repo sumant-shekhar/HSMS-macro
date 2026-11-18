@@ -33,6 +33,7 @@ public final class KillState implements AutoMobKillerState {
 			return this;
 		}
 		if (client.hitResult instanceof EntityHitResult hit && hit.getEntity() == target) {
+			com.example.blockminer.util.FeatureInventory.holdWeapon(client);
 			if (client.gameMode != null) {
 				client.gameMode.attack(client.player, target);
 			}

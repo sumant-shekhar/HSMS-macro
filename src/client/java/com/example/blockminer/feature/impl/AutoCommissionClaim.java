@@ -254,9 +254,9 @@ public final class AutoCommissionClaim extends AbstractFeature {
 			client.setScreenAndShow(null);
 		}
 		if (Config.commSwapBeforeClaiming
-				&& !FeatureInventory.holdHotbarItem(client, Config.miningTool)) {
+				&& !FeatureInventory.holdMiningTool(client)) {
 			stop(ClaimError.NO_ITEMS);
-			sendError("The configured mining tool is not in the hotbar.");
+			sendError("Mining tool is missing from hotbar slot 2.");
 			return;
 		}
 		stop();

@@ -35,7 +35,9 @@ public final class CommissionUtil {
 			Strings.EMISSARY_CARLTON_NAME, new Vec3(-72.50, 153.00, -10.50),
 			Strings.EMISSARY_WILSON_NAME, new Vec3(171.50, 150.00, 31.50),
 			Strings.EMISSARY_LILITH_NAME, new Vec3(58.50, 198.00, -8.50),
-			Strings.EMISSARY_FRAISER_NAME, new Vec3(-132.50, 174.00, -50.50)
+			Strings.EMISSARY_FRAISER_NAME, new Vec3(-132.50, 174.00, -50.50),
+			Strings.EMISSARY_ELIZA_NAME, new Vec3(-37.50, 200.00, -131.50),
+			Strings.EMISSARY_BRAUM_NAME, new Vec3(89.50, 198.00, -92.50)
 	);
 	private static final Map<String, Set<String>> SLAYER_MOBS = Map.of(
 			Strings.GOBLIN_SLAYER_COMMISSION,
@@ -61,8 +63,8 @@ public final class CommissionUtil {
 		return currentPlayers().stream()
 				.filter(EntityUtil::isNpc)
 				.filter(player -> !player.getName().getString().contains(Strings.NPC_SENTRY_NAME))
-				.filter(player -> player.position().distanceToSqr(position) < 0.01D)
-				.findFirst();
+				.filter(player -> player.position().distanceToSqr(position) < 16.0D)
+				.min(Comparator.comparingDouble(player -> player.position().distanceToSqr(position)));
 	}
 
 	public static Optional<AbstractClientPlayer> getClosestEmissary() {
@@ -71,7 +73,31 @@ public final class CommissionUtil {
 			return Optional.empty();
 		}
 		Vec3 position = getClosestEmissaryPosition(client.player.position());
-		return getEmissary(position);
+		Optional<AbstractClientPlayer> near = getEmissary(position);
+		if (near.isPresent()) {
+			return near;
+		}
+		return currentPlayers().stream()
+				.filter(EntityUtil::isNpc)
+				.filter(player -> !player.getName().getString().contains(Strings.NPC_SENTRY_NAME))
+				.filter(player -> isEmissaryName(player.getName().getString()))
+				.min(Comparator.comparingDouble(player -> client.player.distanceToSqr(player)));
+	}
+
+	private static boolean isEmissaryName(String name) {
+		if (name == null) {
+			return false;
+		}
+		String lower = name.toLowerCase(java.util.Locale.ROOT);
+		if (lower.contains("emissary")) {
+			return true;
+		}
+		for (String emissary : EMISSARY_POSITIONS.keySet()) {
+			if (lower.contains(emissary.toLowerCase(java.util.Locale.ROOT))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static Vec3 getClosestEmissaryPosition(Vec3 from) {

@@ -33,6 +33,30 @@ public final class FeatureInventory {
 		return InventoryUtil.holdHotbarItem(client, exactName);
 	}
 
+	public static boolean holdWeapon(Minecraft client) {
+		return InventoryUtil.holdWeapon(client);
+	}
+
+	public static boolean holdMiningTool(Minecraft client) {
+		return InventoryUtil.holdMiningTool(client);
+	}
+
+	public static boolean holdTeleportTool(Minecraft client) {
+		return InventoryUtil.holdTeleportTool(client);
+	}
+
+	public static boolean isWeaponPresent(Minecraft client) {
+		return InventoryUtil.isWeaponPresent(client);
+	}
+
+	public static boolean isMiningToolPresent(Minecraft client) {
+		return InventoryUtil.isMiningToolPresent(client);
+	}
+
+	public static boolean isTeleportToolPresent(Minecraft client) {
+		return InventoryUtil.isTeleportToolPresent(client);
+	}
+
 	public static String title(Minecraft client) {
 		Screen screen = client.gui.screen();
 		return screen == null ? "" : screen.getTitle().getString();

@@ -15,14 +15,22 @@ public final class StartingState implements GlacialMacroState {
 
 	@Override
 	public GlacialMacroState onTick(GlacialMacro macro) {
-		if (Config.miningTool.isBlank()) {
-			macro.disable("Set a mining tool before starting Glacial Macro.");
-			return this;
+		Minecraft client = Minecraft.getInstance();
+		if (client.player != null) {
+			if (!FeatureInventory.isMiningToolPresent(client)) {
+				macro.disable("Mining tool must be in hotbar slot 2.");
+				return this;
+			}
+			if (!FeatureInventory.isTeleportToolPresent(client)) {
+				macro.disable("Teleport tool must be in hotbar slot 3.");
+				return this;
+			}
 		}
 		if (LocationTracker.getGameState().getCurrentSubLocation() != SubLocation.DWARVEN_BASE_CAMP) {
 			return new TeleportingState(new StartingState());
 		}
 		var missing = macro.getNecessaryItems().stream()
+				.filter(item -> !item.equals(com.example.blockminer.util.Strings.ASPECT_OF_THE_VOID_ITEM_NAME))
 				.filter(item -> FeatureInventory.findHotbarItem(Minecraft.getInstance(), item) == -1)
 				.toList();
 		if (!missing.isEmpty()) {

@@ -62,7 +62,7 @@ public final class AutoMobKiller extends AbstractFeature {
 			return;
 		}
 		if (mc.player == null || !holdWeapon(weaponName)) {
-			sendError("The requested weapon must be in the hotbar.");
+			sendError("Weapon for killing must be in hotbar slot 1.");
 			stop();
 			return;
 		}
@@ -182,15 +182,10 @@ public final class AutoMobKiller extends AbstractFeature {
 	}
 
 	public boolean holdWeapon(String name) {
-		if (name == null || name.isBlank() || mc.player == null) {
+		if (mc.player == null) {
 			return false;
 		}
-		int slot = com.example.blockminer.util.FeatureInventory.findHotbarItem(mc, name);
-		if (slot == -1) {
-			return false;
-		}
-		mc.player.getInventory().setSelectedSlot(slot);
-		return true;
+		return com.example.blockminer.util.FeatureInventory.holdWeapon(mc);
 	}
 
 	public void transitionTo(AutoMobKillerState nextState) {

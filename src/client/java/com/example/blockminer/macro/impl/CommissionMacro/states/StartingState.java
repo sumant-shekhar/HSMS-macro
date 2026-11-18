@@ -13,9 +13,16 @@ public final class StartingState implements CommissionMacroState {
 
 	@Override
 	public CommissionMacroState onTick(CommissionMacro macro) {
-		if (Config.miningTool.isBlank() || Config.slayerWeapon.isBlank()) {
-			macro.disable("Set both the mining tool and slayer weapon before starting Commission Macro.");
-			return this;
+		Minecraft client = Minecraft.getInstance();
+		if (client.player != null) {
+			if (!FeatureInventory.isWeaponPresent(client)) {
+				macro.disable("Weapon for killing must be in hotbar slot 1.");
+				return this;
+			}
+			if (!FeatureInventory.isMiningToolPresent(client)) {
+				macro.disable("Mining tool must be in hotbar slot 2.");
+				return this;
+			}
 		}
 		var missing = macro.getNecessaryItems().stream()
 				.filter(item -> FeatureInventory.findHotbarItem(Minecraft.getInstance(), item) == -1)

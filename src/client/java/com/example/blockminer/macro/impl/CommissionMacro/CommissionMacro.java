@@ -10,8 +10,10 @@ import com.example.blockminer.macro.impl.CommissionMacro.states.StartingState;
 import com.example.blockminer.macro.impl.CommissionMacro.states.WarpingState;
 import com.example.blockminer.util.CommissionUtil;
 import com.example.blockminer.util.FeatureInventory;
+import com.example.blockminer.util.InventoryUtil;
 import com.example.blockminer.util.Strings;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
 
 import java.util.ArrayList;
@@ -163,11 +165,18 @@ public final class CommissionMacro extends AbstractMacro {
 	}
 
 	public Integer getDrillRemainingFuel() {
-		int slot = FeatureInventory.findInventoryItem(mc, Config.miningTool);
-		if (slot == -1 || mc.player == null) {
+		if (mc.player == null) {
 			return null;
 		}
-		ItemLore lore = mc.player.getInventory().getItem(slot).get(DataComponents.LORE);
+		int slot = InventoryUtil.MINING_TOOL_SLOT;
+		if (mc.player.getInventory().getItem(slot).isEmpty() && !Config.miningTool.isBlank()) {
+			slot = FeatureInventory.findInventoryItem(mc, Config.miningTool);
+		}
+		if (slot == -1 || mc.player.getInventory().getItem(slot).isEmpty()) {
+			return null;
+		}
+		ItemStack tool = mc.player.getInventory().getItem(slot);
+		ItemLore lore = tool.get(DataComponents.LORE);
 		if (lore != null) {
 			for (var line : lore.lines()) {
 				Matcher matcher = DRILL_FUEL_PATTERN.matcher(line.getString());
@@ -182,7 +191,8 @@ public final class CommissionMacro extends AbstractMacro {
 				}
 			}
 		}
-		if (!fuelLoreWarningSent && Config.miningTool.toLowerCase(java.util.Locale.ROOT).contains("drill")) {
+		String toolName = tool.isEmpty() ? Config.miningTool : tool.getHoverName().getString();
+		if (!fuelLoreWarningSent && toolName.toLowerCase(java.util.Locale.ROOT).contains("drill")) {
 			fuelLoreWarningSent = true;
 			warn("Drill fuel lore did not match the configured pattern; auto-refuel detection is unavailable.");
 		}

@@ -9,8 +9,8 @@ import net.minecraft.client.Minecraft;
 public final class MiningState implements RouteMinerState {
 	@Override
 	public void onStart(RouteMinerMacro macro) {
-		if (!FeatureInventory.holdHotbarItem(Minecraft.getInstance(), Config.miningTool)) {
-			macro.disable("The configured mining tool is not in the hotbar.");
+		if (!FeatureInventory.holdMiningTool(Minecraft.getInstance())) {
+			macro.disable("Mining tool is missing from hotbar slot 2.");
 			return;
 		}
 		BlockMiner.getInstance().start(macro.getBlockPriorities(), macro.getMiningSpeed());

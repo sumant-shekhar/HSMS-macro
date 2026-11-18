@@ -22,11 +22,108 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 public final class InventoryUtil {
+	public static final int WEAPON_SLOT = 0;        // Slot 1 in hotbar (weapon for killing)
+	public static final int MINING_TOOL_SLOT = 1;   // Slot 2 in hotbar (mining tool)
+	public static final int TELEPORT_TOOL_SLOT = 2; // Slot 3 in hotbar (teleport tool)
+
 	private static final int HOTBAR_SIZE = 9;
 	private static final int PLAYER_INVENTORY_SIZE = 36;
 	private static final Pattern FORMATTING_CODE = Pattern.compile("§[0-9a-fk-or]");
 
 	private InventoryUtil() {
+	}
+
+	public static boolean holdWeapon(Minecraft client) {
+		if (client.player == null) {
+			return false;
+		}
+		if (!client.player.getInventory().getItem(WEAPON_SLOT).isEmpty()) {
+			client.player.getInventory().setSelectedSlot(WEAPON_SLOT);
+			return true;
+		}
+		if (!com.example.blockminer.Config.slayerWeapon.isBlank()) {
+			int slot = findHotbarItem(client, com.example.blockminer.Config.slayerWeapon);
+			if (slot >= 0) {
+				client.player.getInventory().setSelectedSlot(slot);
+				return true;
+			}
+		}
+		client.player.getInventory().setSelectedSlot(WEAPON_SLOT);
+		return !client.player.getInventory().getItem(WEAPON_SLOT).isEmpty();
+	}
+
+	public static boolean holdMiningTool(Minecraft client) {
+		if (client.player == null) {
+			return false;
+		}
+		if (!client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty()) {
+			client.player.getInventory().setSelectedSlot(MINING_TOOL_SLOT);
+			return true;
+		}
+		if (!com.example.blockminer.Config.miningTool.isBlank()) {
+			int slot = findHotbarItem(client, com.example.blockminer.Config.miningTool);
+			if (slot >= 0) {
+				client.player.getInventory().setSelectedSlot(slot);
+				return true;
+			}
+		}
+		client.player.getInventory().setSelectedSlot(MINING_TOOL_SLOT);
+		return !client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty();
+	}
+
+	public static boolean holdTeleportTool(Minecraft client) {
+		if (client.player == null) {
+			return false;
+		}
+		if (!client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty()) {
+			client.player.getInventory().setSelectedSlot(TELEPORT_TOOL_SLOT);
+			return true;
+		}
+		int slot = findHotbarItem(client, Strings.ASPECT_OF_THE_VOID_ITEM_NAME);
+		if (slot >= 0) {
+			client.player.getInventory().setSelectedSlot(slot);
+			return true;
+		}
+		slot = findHotbarItem(client, Strings.ASPECT_OF_THE_END_ITEM_NAME);
+		if (slot >= 0) {
+			client.player.getInventory().setSelectedSlot(slot);
+			return true;
+		}
+		client.player.getInventory().setSelectedSlot(TELEPORT_TOOL_SLOT);
+		return !client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty();
+	}
+
+	public static boolean isWeaponPresent(Minecraft client) {
+		if (client.player == null) {
+			return false;
+		}
+		if (!client.player.getInventory().getItem(WEAPON_SLOT).isEmpty()) {
+			return true;
+		}
+		return !com.example.blockminer.Config.slayerWeapon.isBlank()
+				&& findHotbarItem(client, com.example.blockminer.Config.slayerWeapon) >= 0;
+	}
+
+	public static boolean isMiningToolPresent(Minecraft client) {
+		if (client.player == null) {
+			return false;
+		}
+		if (!client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty()) {
+			return true;
+		}
+		return !com.example.blockminer.Config.miningTool.isBlank()
+				&& findHotbarItem(client, com.example.blockminer.Config.miningTool) >= 0;
+	}
+
+	public static boolean isTeleportToolPresent(Minecraft client) {
+		if (client.player == null) {
+			return false;
+		}
+		if (!client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty()) {
+			return true;
+		}
+		return findHotbarItem(client, Strings.ASPECT_OF_THE_VOID_ITEM_NAME) >= 0
+				|| findHotbarItem(client, Strings.ASPECT_OF_THE_END_ITEM_NAME) >= 0;
 	}
 
 	public static boolean holdItem(String itemName) {

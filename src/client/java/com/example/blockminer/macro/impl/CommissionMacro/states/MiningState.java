@@ -17,8 +17,8 @@ public final class MiningState implements CommissionMacroState {
 	@Override
 	public void onStart(CommissionMacro macro) {
 		activeCommission = macro.getCurrentCommission();
-		if (!FeatureInventory.holdHotbarItem(Minecraft.getInstance(), com.example.blockminer.Config.miningTool)) {
-			macro.disable("The configured mining tool is not in the hotbar.");
+		if (!FeatureInventory.holdMiningTool(Minecraft.getInstance())) {
+			macro.disable("Mining tool is missing from hotbar slot 2.");
 			return;
 		}
 		Map<Block, Integer> priorities = new LinkedHashMap<>();
