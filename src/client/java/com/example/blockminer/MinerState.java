@@ -101,7 +101,7 @@ final class MinerState {
 			clearTarget(client);
 
 			if (!(client.gui.screen() instanceof ChatScreen)
-					&& !(client.gui.screen() instanceof MinerSettingsScreen)) {
+					&& !(client.gui.screen() instanceof BlockMinerScreen)) {
 				stop(client);
 			}
 			return;

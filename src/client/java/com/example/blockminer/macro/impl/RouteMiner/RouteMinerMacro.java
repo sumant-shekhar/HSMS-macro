@@ -1,8 +1,6 @@
 package com.example.blockminer.macro.impl.RouteMiner;
 
-import com.example.blockminer.BlockMiner;
 import com.example.blockminer.MineableBlock;
-import com.example.blockminer.feature.FeatureManager;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
 import com.example.blockminer.macro.AbstractMacro;
 import com.example.blockminer.macro.impl.MiningMacro;

@@ -1,5 +1,6 @@
 package com.example.blockminer.command;
 
+import com.example.blockminer.BlockMinerClient;
 import com.example.blockminer.Config;
 import com.example.blockminer.macro.MacroManager;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -14,13 +15,22 @@ public final class MacroCommands {
 	}
 
 	public static void register() {
-		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-				dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mm")
-						.executes(context -> {
-							context.getSource().sendFeedback(Component.literal(
-									"Usage: /mm <start|stop|pause|resume|type|tool|weapon|ore|refuel|fuel|claim>."));
-							return 1;
-						})
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("bm")
+					.executes(context -> {
+						BlockMinerClient.requestConfigScreen();
+						return 1;
+					}));
+			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("macro")
+					.executes(context -> {
+						BlockMinerClient.requestConfigScreen();
+						return 1;
+					}));
+			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mm")
+					.executes(context -> {
+						BlockMinerClient.requestConfigScreen();
+						return 1;
+					})
 						.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("start")
 								.executes(context -> {
 									MacroManager.getInstance().enable();
@@ -97,7 +107,8 @@ public final class MacroCommands {
 								.then(RequiredArgumentBuilder.<FabricClientCommandSource, String>argument(
 										"method", StringArgumentType.word())
 										.executes(context -> setClaimMethod(
-												context.getSource(), StringArgumentType.getString(context, "method")))))));
+												context.getSource(), StringArgumentType.getString(context, "method"))))));
+		});
 	}
 
 	private static int setMiningTool(FabricClientCommandSource source, String value) {

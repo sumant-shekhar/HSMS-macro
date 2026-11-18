@@ -5,7 +5,6 @@ import com.example.blockminer.PlayerUtil;
 import com.example.blockminer.util.helper.graph.Graph;
 import com.example.blockminer.util.helper.graph.GraphSerializer;
 import com.example.blockminer.util.helper.route.RouteWaypoint;
-import com.example.blockminer.util.helper.route.WaypointType;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -251,13 +250,6 @@ public final class GraphHandler {
 		long dx = (long) start.getX() - node.getX();
 		long dy = (long) start.getY() - node.getY();
 		long dz = (long) start.getZ() - node.getZ();
-		return dx * dx + dy * dy + dz * dz;
-	}
-
-	private static long squaredDistance(BlockPos start, BlockPos end) {
-		long dx = (long) start.getX() - end.getX();
-		long dy = (long) start.getY() - end.getY();
-		long dz = (long) start.getZ() - end.getZ();
 		return dx * dx + dy * dy + dz * dz;
 	}
 }

@@ -1,6 +1,5 @@
 package com.example.blockminer.feature.impl.AutoMobKiller;
 
-import com.example.blockminer.Config;
 import com.example.blockminer.KeyBindUtil;
 import com.example.blockminer.RotationHandler;
 import com.example.blockminer.feature.AbstractFeature;

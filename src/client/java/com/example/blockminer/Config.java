@@ -44,6 +44,7 @@ public final class Config {
 	public static int mobKillerMaximumRepaths = 3;
 	public static long mobKillerPathTimeoutMs = 10_000L;
 	public static int macroType = 2;
+	public static int openConfigKey = GLFW.GLFW_KEY_RIGHT_SHIFT;
 	public static int toggleMacro = GLFW.GLFW_KEY_GRAVE_ACCENT;
 	public static String miningTool = "";
 	public static boolean usePickaxeAbility = true;

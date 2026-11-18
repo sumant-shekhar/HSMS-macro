@@ -87,10 +87,6 @@ public final class PathingState implements CommissionMacroState {
 		RouteNavigator.getInstance().stop();
 	}
 
-	private void startNavigation(RouteWaypoint waypoint) {
-		startNavigation(List.of(waypoint));
-	}
-
 	private void startNavigation(List<RouteWaypoint> waypoints) {
 		RouteNavigator.getInstance().start(new Route(waypoints));
 	}

@@ -6,6 +6,7 @@ import com.example.blockminer.command.MacroCommands;
 import com.example.blockminer.command.RouteBuilderCommand;
 import com.example.blockminer.command.ConfigCommands;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
+import com.example.blockminer.feature.impl.AutoMobKiller.AutoMobKiller;
 import com.example.blockminer.feature.impl.RouteNavigator;
 import com.example.blockminer.feature.FeatureManager;
 import com.example.blockminer.handler.RouteHandler;
@@ -29,6 +30,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.input.KeyEvent;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -53,12 +55,10 @@ public final class BlockMinerClient implements ClientModInitializer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	private static final String PICKOBULUS_MESSAGE = Strings.PICKOBULUS_AVAILABLE_CHAT;
 	private static final MinerState MINER = new MinerState();
-	private static final int AUTO_CLICK_INTERVAL_TICKS = 100;
+	private static int autoClickIntervalTicks = 100;
 	private static KeyMapping openConfigKey;
 	private static KeyMapping routeNavigationKey;
 	private static KeyMapping getStatsKey;
-	private static boolean openSettingsPending;
-	private static boolean openModeTabPending;
 	private static boolean openConfigPending;
 	private static boolean autoClickEnabled;
 	private static int autoClickTicks;
@@ -102,7 +102,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 			BlockMiner.getInstance().tick(client);
 			tickAutoClick(client);
 			if (openConfigKey.consumeClick()) {
-				client.setScreenAndShow(new ConfigScreen());
+				client.setScreenAndShow(new BlockMinerScreen());
 			}
 			if (routeNavigationKey.consumeClick()) {
 				if (client.player != null && client.level != null && client.gui.screen() == null) {
@@ -120,14 +120,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 			}
 			if (openConfigPending) {
 				openConfigPending = false;
-				client.setScreenAndShow(new ConfigScreen());
-			}
-			if (openSettingsPending) {
-				openSettingsPending = false;
-				MinerSettingsScreen settingsScreen = new MinerSettingsScreen(MINER, openModeTabPending);
-				client.setScreenAndShow(settingsScreen);
-				LOGGER.info("[blockminer] settings screen active: {}", client.gui.screen() == settingsScreen);
-				openModeTabPending = false;
+				client.setScreenAndShow(new BlockMinerScreen());
 			}
 		});
 		RotationDebugCommands.register();
@@ -147,16 +140,11 @@ public final class BlockMinerClient implements ClientModInitializer {
 			if (isBlockMinerChatCommand(command)) {
 				LOGGER.info("[blockminer] received chat command: {}", command);
 			}
-			if ("!ore".equalsIgnoreCase(command)) {
-				openModeTabPending = true;
-				openSettingsPending = true;
-				return false;
-			}
-			if ("!mithril settings".equalsIgnoreCase(command)
+			if ("!ore".equalsIgnoreCase(command)
+					|| "!mithril settings".equalsIgnoreCase(command)
 					|| "$mithril settings".equalsIgnoreCase(command)
 					|| "$mithril ore".equalsIgnoreCase(command)) {
-				openModeTabPending = false;
-				openSettingsPending = true;
+				openConfigPending = true;
 				return false;
 			}
 			if ("!click".equalsIgnoreCase(command)) {
@@ -211,10 +199,6 @@ public final class BlockMinerClient implements ClientModInitializer {
 		});
 	}
 
-	public static void requestConfigScreen() {
-		openConfigPending = true;
-	}
-
 	private static boolean isBlockMinerChatCommand(String command) {
 		return "!ore".equalsIgnoreCase(command)
 				|| "!mithril settings".equalsIgnoreCase(command)
@@ -225,8 +209,66 @@ public final class BlockMinerClient implements ClientModInitializer {
 				|| "!mithril".equalsIgnoreCase(command);
 	}
 
-	static boolean isAutoClickEnabled() {
+	public static void requestConfigScreen() {
+		openConfigPending = true;
+	}
+
+	public static MinerState getMiner() {
+		return MINER;
+	}
+
+	public static KeyMapping getOpenConfigKey() {
+		return openConfigKey;
+	}
+
+	public static boolean handleRawKeyPress(KeyEvent event) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			return false;
+		}
+
+		boolean matchesConfig = false;
+		if (openConfigKey != null && openConfigKey.matches(event)) {
+			matchesConfig = true;
+		} else if (event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT
+				|| (Config.openConfigKey != GLFW.GLFW_KEY_UNKNOWN && event.key() == Config.openConfigKey)) {
+			matchesConfig = true;
+		}
+
+		if (matchesConfig) {
+			if (client.gui.screen() == null) {
+				client.setScreenAndShow(new BlockMinerScreen());
+				return true;
+			} else if (client.gui.screen() instanceof BlockMinerScreen) {
+				client.gui.screen().onClose();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static void stopAll(Minecraft client) {
+		MINER.stop(client);
+		MacroManager.getInstance().disable();
+		RouteNavigator.getInstance().stop();
+		AutoMobKiller.getInstance().stop();
+		KeyBindUtil.stopMovement();
+	}
+
+	public static boolean isAutoClickEnabled() {
 		return autoClickEnabled;
+	}
+
+	public static void setAutoClickEnabled(boolean enabled) {
+		autoClickEnabled = enabled;
+	}
+
+	public static int getAutoClickIntervalTicks() {
+		return autoClickIntervalTicks;
+	}
+
+	public static void setAutoClickIntervalTicks(int ticks) {
+		autoClickIntervalTicks = Math.max(1, ticks);
 	}
 
 	static void toggleAutoClick(Minecraft client) {
@@ -247,7 +289,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 		LocalPlayer player = Objects.requireNonNull(client.player);
 		MultiPlayerGameMode gameMode = Objects.requireNonNull(client.gameMode);
 
-		if (++autoClickTicks >= AUTO_CLICK_INTERVAL_TICKS) {
+		if (++autoClickTicks >= autoClickIntervalTicks) {
 			autoClickTicks = 0;
 			gameMode.useItem(player, InteractionHand.MAIN_HAND);
 		}

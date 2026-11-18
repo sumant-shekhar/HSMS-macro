@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "MixinAbstractContainerScreen",
+    "MixinKeyboardHandler",
     "MixinMouseHandler",
     "StainedGlassPaneCollisionMixin",
     "accessor.KeyMappingAccessor",
