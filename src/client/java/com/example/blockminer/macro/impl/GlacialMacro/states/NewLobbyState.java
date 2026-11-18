@@ -29,7 +29,10 @@ public final class NewLobbyState implements GlacialMacroState {
 			warp.start(null, SubLocation.DWARVEN_BASE_CAMP);
 			return this;
 		}
-		return new GettingStatsState();
+		if (macro.getMiningSpeed() == 0) {
+			macro.setMiningSpeed(com.example.blockminer.util.StatsUtil.getMiningSpeed());
+		}
+		return new PathfindingState();
 	}
 
 	@Override

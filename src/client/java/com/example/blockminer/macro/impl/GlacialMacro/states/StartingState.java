@@ -5,6 +5,7 @@ import com.example.blockminer.location.LocationTracker;
 import com.example.blockminer.location.SubLocation;
 import com.example.blockminer.macro.impl.GlacialMacro.GlacialMacro;
 import com.example.blockminer.util.FeatureInventory;
+import com.example.blockminer.util.StatsUtil;
 import net.minecraft.client.Minecraft;
 
 public final class StartingState implements GlacialMacroState {
@@ -29,7 +30,10 @@ public final class StartingState implements GlacialMacroState {
 					+ String.join(", ", missing));
 			return this;
 		}
-		return macro.getMiningSpeed() == 0 ? new GettingStatsState() : new PathfindingState();
+		if (macro.getMiningSpeed() == 0) {
+			macro.setMiningSpeed(StatsUtil.getMiningSpeed());
+		}
+		return new PathfindingState();
 	}
 
 	@Override

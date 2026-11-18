@@ -4,8 +4,7 @@ import com.example.blockminer.BlockMiner;
 import com.example.blockminer.Config;
 import com.example.blockminer.MineableBlock;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
-import com.example.blockminer.feature.impl.AutoGetStats.tasks.impl.MiningSpeedRetrievalTask;
-import com.example.blockminer.feature.impl.AutoGetStats.tasks.impl.PickaxeAbilityRetrievalTask;
+import com.example.blockminer.util.StatsUtil;
 import com.example.blockminer.macro.AbstractMacro;
 import com.example.blockminer.util.FeatureInventory;
 import net.minecraft.client.Minecraft;
@@ -17,8 +16,6 @@ import java.util.Map;
 public final class MiningMacro extends AbstractMacro {
 	private static final MiningMacro INSTANCE = new MiningMacro();
 	private final BlockMiner miner = BlockMiner.getInstance();
-	private MiningSpeedRetrievalTask miningSpeedTask;
-	private PickaxeAbilityRetrievalTask pickaxeAbilityTask;
 	private State state = State.IDLE;
 	private int miningSpeed;
 	private boolean restartMining;
@@ -42,23 +39,14 @@ public final class MiningMacro extends AbstractMacro {
 
 	@Override
 	public void onEnable() {
-		if (Config.miningTool.isBlank()) {
-			disable("Set Config.miningTool before starting the Mining Macro.");
-			return;
-		}
-		if (!FeatureInventory.holdHotbarItem(Minecraft.getInstance(), Config.miningTool)) {
-			disable("The configured mining tool is not in the hotbar.");
-			return;
+		if (!Config.miningTool.isBlank()) {
+			FeatureInventory.holdHotbarItem(Minecraft.getInstance(), Config.miningTool);
 		}
 		miner.stop();
 		AutoGetStats.getInstance().stop();
-		miningSpeed = 0;
+		miningSpeed = StatsUtil.getMiningSpeed();
 		restartMining = false;
-		miningSpeedTask = new MiningSpeedRetrievalTask();
-		pickaxeAbilityTask = new PickaxeAbilityRetrievalTask();
-		AutoGetStats.getInstance().startTask(miningSpeedTask);
-		AutoGetStats.getInstance().startTask(pickaxeAbilityTask);
-		transitionTo(State.GETTING_STATS);
+		startMining();
 	}
 
 	@Override
@@ -87,23 +75,7 @@ public final class MiningMacro extends AbstractMacro {
 	public void onTick(net.minecraft.client.Minecraft client) {
 		switch (state) {
 			case GETTING_STATS -> {
-				if (!AutoGetStats.getInstance().hasFinishedAllTasks()) {
-					return;
-				}
-				if (miningSpeedTask.getError() != null) {
-					disable("Failed to retrieve mining speed: " + miningSpeedTask.getError());
-					return;
-				}
-				if (pickaxeAbilityTask.getError() != null) {
-					disable("Failed to retrieve pickaxe ability: " + pickaxeAbilityTask.getError());
-					return;
-				}
-				Integer result = miningSpeedTask.getResult();
-				if (result == null || result <= 0) {
-					disable("Mining speed retrieval returned no positive value.");
-					return;
-				}
-				miningSpeed = result;
+				miningSpeed = StatsUtil.getMiningSpeed();
 				startMining();
 			}
 			case MINING -> handleMiningResult();

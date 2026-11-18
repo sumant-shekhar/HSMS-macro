@@ -34,6 +34,7 @@ public final class MinerState {
 	private String searchReason = "no target in range (4 blocks)";
 	private Vec3 precisionAimPoint;
 	private long precisionAimExpireTick;
+	private int lookAwayTicks;
 
 	public void onParticle(net.minecraft.core.particles.ParticleType<?> type, double x, double y, double z) {
 		if ((!Config.precisionMining && !Config.precisionMiner) || target == null) {
@@ -203,18 +204,26 @@ public final class MinerState {
 
 		boolean aimed = RotationHelper.rotateToward(player, aimPoint);
 
-		if (!aimed || !(client.hitResult instanceof BlockHitResult hit)
-				|| hit.getType() != HitResult.Type.BLOCK
-				|| !hit.getBlockPos().equals(target.position())) {
-			releaseMining();
-			return;
-		}
+		boolean lookingAtTarget = aimed && (client.hitResult instanceof BlockHitResult hit)
+				&& hit.getType() == HitResult.Type.BLOCK
+				&& hit.getBlockPos().equals(target.position());
 
-		if (!mining) {
-			mining = true;
-			LOGGER.info("[blockminer] started breaking block at {}", target.position());
+		if (lookingAtTarget) {
+			lookAwayTicks = 0;
+			if (!mining) {
+				mining = true;
+				LOGGER.info("[blockminer] started breaking block at {}", target.position());
+			}
+			setLeftClick(true);
+		} else {
+			if (mining) {
+				if (++lookAwayTicks > 5) {
+					releaseMining();
+				}
+			} else {
+				releaseMining();
+			}
 		}
-		setLeftClick(true);
 	}
 
 	private void removeExpiredBlacklistEntries() {
@@ -231,6 +240,7 @@ public final class MinerState {
 		target = null;
 		ticksOnTarget = 0;
 		precisionAimPoint = null;
+		lookAwayTicks = 0;
 	}
 
 	private void releaseMining() {
@@ -239,5 +249,6 @@ public final class MinerState {
 			LOGGER.info("[blockminer] stopped breaking block at {}", target == null ? "unknown" : target.position());
 		}
 		mining = false;
+		lookAwayTicks = 0;
 	}
 }

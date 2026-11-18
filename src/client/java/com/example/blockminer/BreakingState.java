@@ -2,7 +2,6 @@ package com.example.blockminer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,7 +22,6 @@ public final class BreakingState implements BlockMinerState {
 	private net.minecraft.world.level.block.Block targetBlock;
 	private long miningTime;
 	private int breakAttemptTicks;
-	private boolean destroying;
 
 	@Override
 	public void onStart(BlockMiner miner) {
@@ -77,31 +75,22 @@ public final class BreakingState implements BlockMinerState {
 
 		KeyBindUtil.setKeyBindState(client.options.keyShift, Config.sneakWhileMining);
 		if (RotationHandler.getInstance().isEnabled()) {
-			stopDestroying(client.gameMode);
+			KeyBindUtil.setKeyBindState(client.options.keyAttack, false);
 		} else {
-			if (client.gameMode != null
-					&& client.hitResult instanceof BlockHitResult hit
+			boolean lookingAtTarget = client.hitResult instanceof BlockHitResult hit
 					&& hit.getType() == HitResult.Type.BLOCK
-					&& targetPosition.equals(hit.getBlockPos())) {
-				if (!destroying) {
-					destroying = client.gameMode.startDestroyBlock(targetPosition, hit.getDirection());
-				} else if (!client.gameMode.continueDestroyBlock(targetPosition, hit.getDirection())) {
-					stopDestroying(client.gameMode);
-				}
-			} else {
-				stopDestroying(client.gameMode);
-			}
+					&& targetPosition.equals(hit.getBlockPos());
 
-			if (!(client.hitResult instanceof BlockHitResult hit)
-					|| hit.getType() != HitResult.Type.BLOCK
-					|| !targetPosition.equals(hit.getBlockPos())) {
+			if (lookingAtTarget) {
+				lookAwayTimer.reset();
+				KeyBindUtil.setKeyBindState(client.options.keyAttack, true);
+			} else {
 				if (!lookAwayTimer.isScheduled()) {
 					lookAwayTimer.schedule(LOOK_AWAY_THRESHOLD_MS);
 				} else if (lookAwayTimer.passed()) {
+					KeyBindUtil.setKeyBindState(client.options.keyAttack, false);
 					return new StartingState();
 				}
-			} else {
-				lookAwayTimer.reset();
 			}
 		}
 
@@ -116,14 +105,7 @@ public final class BreakingState implements BlockMinerState {
 	public void onEnd(BlockMiner miner) {
 		Minecraft client = Minecraft.getInstance();
 		KeyBindUtil.setKeyBindState(client.options.keyShift, false);
-		stopDestroying(client.gameMode);
+		KeyBindUtil.setKeyBindState(client.options.keyAttack, false);
 		RotationHandler.getInstance().stop();
-	}
-
-	private void stopDestroying(MultiPlayerGameMode gameMode) {
-		if (destroying && gameMode != null) {
-			gameMode.stopDestroyBlock();
-		}
-		destroying = false;
 	}
 }

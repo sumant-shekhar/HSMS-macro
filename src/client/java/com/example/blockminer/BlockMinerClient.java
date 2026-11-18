@@ -94,7 +94,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 			// TODO(verify): END_CLIENT_TICK has no partial-tick value; confirm tick stepping is sufficient for camera easing.
 			RotationHandler.getInstance().tick(client);
 			KeyBindUtil.tick();
-			PathfindingDebugCommands.tick(client);
+			com.example.blockminer.pathfinder.PathExecutor.getInstance().tick(client);
 			MacroManager.getInstance().onTick(client);
 			AutoChestUnlocker.getInstance().tick(client);
 			MINER.tick(client);
@@ -238,37 +238,27 @@ public final class BlockMinerClient implements ClientModInitializer {
 	public static void setLeftClick(boolean pressed) {
 		Minecraft client = Minecraft.getInstance();
 		if (client != null && client.options != null && client.options.keyAttack != null) {
-			KeyMapping.set(client.options.keyAttack.getDefaultKey(), pressed);
-			client.options.keyAttack.setDown(pressed);
+			KeyBindUtil.setKeyBindState(client.options.keyAttack, pressed);
 		}
 	}
 
 	public static void triggerLeftClick() {
-		Minecraft client = Minecraft.getInstance();
-		if (client != null && client.options != null && client.options.keyAttack != null) {
-			KeyMapping.click(client.options.keyAttack.getDefaultKey());
-		}
+		KeyBindUtil.leftClick();
 	}
 
 	public static void setRightClick(boolean pressed) {
 		Minecraft client = Minecraft.getInstance();
 		if (client != null && client.options != null && client.options.keyUse != null) {
-			KeyMapping.set(client.options.keyUse.getDefaultKey(), pressed);
-			client.options.keyUse.setDown(pressed);
+			KeyBindUtil.setKeyBindState(client.options.keyUse, pressed);
 		}
 	}
 
 	public static void triggerRightClick() {
-		Minecraft client = Minecraft.getInstance();
-		if (client != null && client.options != null && client.options.keyUse != null) {
-			KeyMapping.click(client.options.keyUse.getDefaultKey());
-		}
+		KeyBindUtil.rightClick();
 	}
 
 	public static void releaseAllKeys() {
-		setLeftClick(false);
-		setRightClick(false);
-		KeyMapping.releaseAll();
+		KeyBindUtil.releaseAll();
 	}
 
 	public static boolean handleRawKeyPress(KeyEvent event) {

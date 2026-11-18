@@ -9,4 +9,11 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface KeyMappingAccessor {
 	@Accessor("key")
 	InputConstants.Key blockminer$getKey();
+
+	@Accessor("clickCount")
+	int blockminer$getClickCount();
+
+	@Accessor("clickCount")
+	void blockminer$setClickCount(int clickCount);
 }
+

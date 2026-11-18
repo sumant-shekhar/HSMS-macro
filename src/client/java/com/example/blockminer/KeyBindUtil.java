@@ -1,5 +1,7 @@
 package com.example.blockminer;
 
+import com.example.blockminer.mixin.accessor.KeyMappingAccessor;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.world.phys.Vec3;
@@ -31,13 +33,38 @@ public final class KeyBindUtil {
 		if (key == null) {
 			return;
 		}
+		InputConstants.Key boundKey = (key instanceof KeyMappingAccessor accessor)
+				? accessor.blockminer$getKey()
+				: null;
+		if (boundKey == null) {
+			boundKey = key.getDefaultKey();
+		}
+
 		if (pressed && CLIENT.gui.screen() != null) {
+			KeyMapping.set(boundKey, false);
 			key.setDown(false);
+			if (key instanceof KeyMappingAccessor accessor) {
+				accessor.blockminer$setClickCount(0);
+			}
 			TIMED_RELEASES.remove(key);
 			return;
 		}
-		key.setDown(pressed);
-		if (!pressed) {
+
+		if (pressed) {
+			if (!key.isDown()) {
+				KeyMapping.click(boundKey);
+				if (key instanceof KeyMappingAccessor accessor && accessor.blockminer$getClickCount() == 0) {
+					accessor.blockminer$setClickCount(1);
+				}
+			}
+			KeyMapping.set(boundKey, true);
+			key.setDown(true);
+		} else {
+			KeyMapping.set(boundKey, false);
+			key.setDown(false);
+			if (key instanceof KeyMappingAccessor accessor) {
+				accessor.blockminer$setClickCount(0);
+			}
 			TIMED_RELEASES.remove(key);
 		}
 	}
@@ -52,15 +79,13 @@ public final class KeyBindUtil {
 
 	public static void rightClick() {
 		if (CLIENT.options != null && CLIENT.options.keyUse != null) {
-			KeyMapping.click(CLIENT.options.keyUse.getDefaultKey());
 			pressFor(CLIENT.options.keyUse, 100L);
 		}
 	}
 
 	public static void leftClick() {
 		if (CLIENT.options != null && CLIENT.options.keyAttack != null) {
-			KeyMapping.click(CLIENT.options.keyAttack.getDefaultKey());
-			pressFor(CLIENT.options.keyAttack, 50L);
+			pressFor(CLIENT.options.keyAttack, 80L);
 		}
 	}
 
@@ -84,10 +109,9 @@ public final class KeyBindUtil {
 		long now = System.nanoTime();
 		TIMED_RELEASES.entrySet().removeIf(entry -> {
 			if (now >= entry.getValue()) {
-				entry.getKey().setDown(false);
+				setKeyBindState(entry.getKey(), false);
 				return true;
 			}
-			entry.getKey().setDown(true);
 			return false;
 		});
 	}

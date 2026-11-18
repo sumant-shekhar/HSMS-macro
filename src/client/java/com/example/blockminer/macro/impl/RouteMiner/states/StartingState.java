@@ -1,6 +1,7 @@
 package com.example.blockminer.macro.impl.RouteMiner.states;
 
 import com.example.blockminer.macro.impl.RouteMiner.RouteMinerMacro;
+import com.example.blockminer.util.StatsUtil;
 
 public final class StartingState implements RouteMinerState {
 	@Override
@@ -9,7 +10,10 @@ public final class StartingState implements RouteMinerState {
 
 	@Override
 	public RouteMinerState onTick(RouteMinerMacro macro) {
-		return macro.getMiningSpeed() == 0 ? new GettingStatsState() : new MovingState();
+		if (macro.getMiningSpeed() == 0) {
+			macro.setMiningSpeed(StatsUtil.getMiningSpeed());
+		}
+		return new MovingState();
 	}
 
 	@Override

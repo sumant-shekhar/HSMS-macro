@@ -3,6 +3,7 @@ package com.example.blockminer.macro.impl.CommissionMacro.states;
 import com.example.blockminer.Config;
 import com.example.blockminer.macro.impl.CommissionMacro.CommissionMacro;
 import com.example.blockminer.util.FeatureInventory;
+import com.example.blockminer.util.StatsUtil;
 import net.minecraft.client.Minecraft;
 
 public final class StartingState implements CommissionMacroState {
@@ -23,7 +24,10 @@ public final class StartingState implements CommissionMacroState {
 			macro.disable("Put the required items in the hotbar: " + String.join(", ", missing));
 			return this;
 		}
-		return macro.getMiningSpeed() == 0 ? new GettingStatsState() : new PathingState();
+		if (macro.getMiningSpeed() == 0) {
+			macro.setMiningSpeed(StatsUtil.getMiningSpeed());
+		}
+		return new PathingState();
 	}
 
 	@Override
