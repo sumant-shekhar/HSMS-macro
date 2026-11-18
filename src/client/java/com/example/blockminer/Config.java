@@ -233,14 +233,26 @@ public final class Config {
 				&& !(field.getType().isPrimitive() && isPrimitiveWrapper(field.getType(), value))) {
 			throw new IllegalArgumentException("Invalid value for config property: " + field.getName());
 		}
-		if (value instanceof Number number
-				&& (!Double.isFinite(number.doubleValue()) || number.doubleValue() < 0.0D)) {
-			throw new IllegalArgumentException("Config numeric values must be finite and nonnegative: "
-					+ field.getName());
+		if (value instanceof Number number) {
+			if (!Double.isFinite(number.doubleValue())) {
+				throw new IllegalArgumentException("Config numeric values must be finite: " + field.getName());
+			}
+			if (isKeybindField(field)) {
+				if (number.intValue() < -1) {
+					throw new IllegalArgumentException("Config keybind must be valid or -1: " + field.getName());
+				}
+			} else if (number.doubleValue() < 0.0D) {
+				throw new IllegalArgumentException("Config numeric values must be nonnegative: " + field.getName());
+			}
 		}
 		if (value instanceof String text && text.length() > 512) {
 			throw new IllegalArgumentException("Config text is too long: " + field.getName());
 		}
+	}
+
+	private static boolean isKeybindField(Field field) {
+		String name = field.getName();
+		return name.equals("toggleMacro") || (name.startsWith("routeBuilder") && field.getType() == int.class && !name.endsWith("Color"));
 	}
 
 	private static boolean isPrimitiveWrapper(Class<?> primitive, Object value) {

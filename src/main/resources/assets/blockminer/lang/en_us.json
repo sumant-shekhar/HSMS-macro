@@ -1,5 +1,5 @@
 {
-	"key.blockminer.open_settings": "Open Block Miner Settings",
+	"key.blockminer.open_config": "Open Block Miner Config",
 	"key.blockminer.toggle_route_navigation": "Toggle Route Navigation",
 	"key.blockminer.retrieve_mining_stats": "Retrieve Mining Stats"
 }

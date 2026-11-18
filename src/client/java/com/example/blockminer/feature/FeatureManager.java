@@ -97,6 +97,9 @@ public final class FeatureManager {
 	}
 
 	private void onTick(Minecraft client) {
+		if (client.player == null || client.level == null || client.gameMode == null) {
+			return;
+		}
 		allFeatures.forEach(feature -> feature.tick(client));
 		onTablistUpdate(LocationTracker.getGameState().getTabList());
 	}

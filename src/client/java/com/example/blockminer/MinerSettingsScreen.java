@@ -121,13 +121,14 @@ final class MinerSettingsScreen extends Screen {
 	}
 
 	private void addSettingsControls(int left, int top) {
+		float initialSpeed = RotationHelper.getMaxStepPerTick();
 		addRenderableWidget(new AbstractSliderButton(
 				left + 60,
 				top + 132,
 				240,
 				20,
-				Component.empty(),
-				(RotationHelper.getMaxStepPerTick() - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
+				Component.literal("Camera speed: " + String.format("%.1f", initialSpeed)),
+				(initialSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
 		) {
 			@Override
 			protected void updateMessage() {
@@ -140,13 +141,14 @@ final class MinerSettingsScreen extends Screen {
 				RotationHelper.setMaxStepPerTick(speedFromValue(value));
 			}
 		});
+		double initialAngle = MiningTargets.getMaxViewAngle();
 		addRenderableWidget(new AbstractSliderButton(
 				left + 60,
 				top + 162,
 				240,
 				20,
-				Component.empty(),
-				(MiningTargets.getMaxViewAngle() - MiningTargets.MIN_VIEW_ANGLE) / VIEW_ANGLE_RANGE
+				Component.literal("View cone: " + Math.round(initialAngle) + " degrees"),
+				(initialAngle - MiningTargets.MIN_VIEW_ANGLE) / VIEW_ANGLE_RANGE
 		) {
 			@Override
 			protected void updateMessage() {

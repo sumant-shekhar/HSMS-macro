@@ -75,7 +75,7 @@ public final class BreakingState implements BlockMinerState {
 			return new StartingState();
 		}
 
-		client.options.keyShift.setDown(Config.sneakWhileMining);
+		KeyBindUtil.setKeyBindState(client.options.keyShift, Config.sneakWhileMining);
 		if (RotationHandler.getInstance().isEnabled()) {
 			stopDestroying(client.gameMode);
 		} else {
@@ -115,7 +115,7 @@ public final class BreakingState implements BlockMinerState {
 	@Override
 	public void onEnd(BlockMiner miner) {
 		Minecraft client = Minecraft.getInstance();
-		client.options.keyShift.setDown(false);
+		KeyBindUtil.setKeyBindState(client.options.keyShift, false);
 		stopDestroying(client.gameMode);
 		RotationHandler.getInstance().stop();
 	}

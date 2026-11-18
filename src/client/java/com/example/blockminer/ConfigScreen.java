@@ -9,7 +9,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -90,7 +89,7 @@ public final class ConfigScreen extends Screen {
 		applyTextSettings();
 		try {
 			Config.save();
-		} catch (IOException exception) {
+		} catch (Exception exception) {
 			Logger.sendError("Could not save config/blockminer.json: " + exception.getMessage());
 		}
 		super.onClose();
@@ -219,9 +218,11 @@ public final class ConfigScreen extends Screen {
 
 	private void addSlider(int left, String label, int min, int max, int current, IntConsumer setValue) {
 		int rowY = nextRow(26);
-		double normalized = (double) (Math.clamp(current, min, max) - min) / (max - min);
+		int range = Math.max(1, max - min);
+		int clampedCurrent = Math.clamp(current, min, max);
+		double normalized = (double) (clampedCurrent - min) / range;
 		addRenderableWidget(new AbstractSliderButton(
-				left + 14, rowY, panelWidth() - 28, 22, Component.empty(), normalized
+				left + 14, rowY, panelWidth() - 28, 22, Component.literal(label + ": " + clampedCurrent), normalized
 		) {
 			private int selectedValue() {
 				return min + (int) Math.round(value * (max - min));

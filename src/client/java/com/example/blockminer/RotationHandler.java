@@ -76,7 +76,7 @@ public final class RotationHandler {
 	}
 
 	public void tick(Minecraft client) {
-		if (stopRequested) {
+		if (stopRequested || client.gui.screen() != null) {
 			reset();
 			return;
 		}

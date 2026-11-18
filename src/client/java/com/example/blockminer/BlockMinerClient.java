@@ -5,7 +5,6 @@ import com.example.blockminer.command.FeatureCommands;
 import com.example.blockminer.command.MacroCommands;
 import com.example.blockminer.command.RouteBuilderCommand;
 import com.example.blockminer.command.ConfigCommands;
-import com.example.blockminer.ConfigScreen;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
 import com.example.blockminer.feature.impl.RouteNavigator;
 import com.example.blockminer.feature.FeatureManager;
@@ -30,6 +29,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -54,7 +54,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 	private static final String PICKOBULUS_MESSAGE = Strings.PICKOBULUS_AVAILABLE_CHAT;
 	private static final MinerState MINER = new MinerState();
 	private static final int AUTO_CLICK_INTERVAL_TICKS = 100;
-	private static KeyMapping openSettingsKey;
+	private static KeyMapping openConfigKey;
 	private static KeyMapping routeNavigationKey;
 	private static KeyMapping getStatsKey;
 	private static boolean openSettingsPending;
@@ -71,24 +71,27 @@ public final class BlockMinerClient implements ClientModInitializer {
 		} catch (IOException | JsonParseException | IllegalArgumentException | IllegalStateException exception) {
 			LOGGER.error("[blockminer] Could not load config; using in-memory defaults.", exception);
 		}
-		openSettingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-				"key.blockminer.open_settings",
+		openConfigKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.open_config",
 				InputConstants.Type.KEYSYM,
-				GLFW.GLFW_KEY_K,
+				GLFW.GLFW_KEY_RIGHT_SHIFT,
 				KeyMapping.Category.MISC
 		));
+
 		routeNavigationKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.blockminer.toggle_route_navigation",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_UNKNOWN,
 				KeyMapping.Category.MISC
 		));
+
 		getStatsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.blockminer.retrieve_mining_stats",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_UNKNOWN,
 				KeyMapping.Category.MISC
 		));
+
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			// TODO(verify): END_CLIENT_TICK has no partial-tick value; confirm tick stepping is sufficient for camera easing.
 			RotationHandler.getInstance().tick(client);
@@ -98,20 +101,22 @@ public final class BlockMinerClient implements ClientModInitializer {
 			MINER.tick(client);
 			BlockMiner.getInstance().tick(client);
 			tickAutoClick(client);
-			if (openSettingsKey.consumeClick()) {
-				openSettingsPending = false;
-				openModeTabPending = false;
-				client.setScreenAndShow(new MinerSettingsScreen(MINER));
+			if (openConfigKey.consumeClick()) {
+				client.setScreenAndShow(new ConfigScreen());
 			}
 			if (routeNavigationKey.consumeClick()) {
-				if (RouteNavigator.getInstance().isRunning()) {
-					RouteNavigator.getInstance().stop();
-				} else {
-					RouteNavigator.getInstance().start(RouteHandler.getInstance().getSelectedRoute());
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					if (RouteNavigator.getInstance().isRunning()) {
+						RouteNavigator.getInstance().stop();
+					} else {
+						RouteNavigator.getInstance().start(RouteHandler.getInstance().getSelectedRoute());
+					}
 				}
 			}
 			if (getStatsKey.consumeClick()) {
-				AutoGetStats.getInstance().startDefaultTasks();
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					AutoGetStats.getInstance().startDefaultTasks();
+				}
 			}
 			if (openConfigPending) {
 				openConfigPending = false;
@@ -231,6 +236,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 			client.player.sendOverlayMessage(Component.literal(
 					"Auto click: " + (autoClickEnabled ? "ON (every 5s)" : "OFF")
 			));
+
 		}
 	}
 

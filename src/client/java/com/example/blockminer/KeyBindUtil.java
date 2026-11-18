@@ -22,13 +22,6 @@ public final class KeyBindUtil {
 			CLIENT.options.keyShift,
 			CLIENT.options.keySprint
 	};
-	private static final KeyMapping[] MOVEMENT_KEYS = {
-			CLIENT.options.keyDown,
-			CLIENT.options.keyUp,
-			CLIENT.options.keyLeft,
-			CLIENT.options.keyRight,
-			CLIENT.options.keyJump
-	};
 	private static final Map<KeyMapping, Long> TIMED_RELEASES = new IdentityHashMap<>();
 
 	private KeyBindUtil() {
@@ -58,9 +51,16 @@ public final class KeyBindUtil {
 	}
 
 	public static void tick() {
+		if (CLIENT.gui.screen() != null) {
+			if (!areAllKeybindsReleased() || !TIMED_RELEASES.isEmpty()) {
+				stopMovement();
+			}
+			TIMED_RELEASES.clear();
+			return;
+		}
 		long now = System.nanoTime();
 		TIMED_RELEASES.entrySet().removeIf(entry -> {
-			if (now >= entry.getValue() || CLIENT.gui.screen() != null) {
+			if (now >= entry.getValue()) {
 				entry.getKey().setDown(false);
 				return true;
 			}
@@ -119,7 +119,7 @@ public final class KeyBindUtil {
 	}
 
 	public static boolean areAllKeybindsReleased() {
-		for (KeyMapping key : MOVEMENT_KEYS) {
+		for (KeyMapping key : ALL_KEYS) {
 			if (key.isDown()) {
 				return false;
 			}

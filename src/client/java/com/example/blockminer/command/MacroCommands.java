@@ -16,6 +16,11 @@ public final class MacroCommands {
 	public static void register() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
 				dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mm")
+						.executes(context -> {
+							context.getSource().sendFeedback(Component.literal(
+									"Usage: /mm <start|stop|pause|resume|type|tool|weapon|ore|refuel|fuel|claim>."));
+							return 1;
+						})
 						.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("start")
 								.executes(context -> {
 									MacroManager.getInstance().enable();

@@ -58,7 +58,6 @@ public final class RaytracingUtil {
 	}
 
 	public static HitResult raytrace(ClientLevel level, LocalPlayer player, Vec3 from, Vec3 to) {
-		Vec3 ray = to.subtract(from);
 		AABB searchBounds = new AABB(from, to).inflate(1.0D);
 		EntityHitResult entityHit = findEntityHit(level, player, from, to, searchBounds);
 		if (entityHit != null) {

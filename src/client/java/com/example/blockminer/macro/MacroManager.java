@@ -108,7 +108,7 @@ public final class MacroManager {
 	}
 
 	public void onTick(Minecraft client) {
-		if (!isRunning() || client.player == null || client.level == null) {
+		if (!isRunning() || client.player == null || client.level == null || client.gameMode == null) {
 			return;
 		}
 		currentMacro.onTick(client);

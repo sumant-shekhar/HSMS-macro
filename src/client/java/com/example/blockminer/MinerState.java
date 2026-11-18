@@ -89,7 +89,7 @@ final class MinerState {
 		LocalPlayer player = client.player;
 		MultiPlayerGameMode gameMode = client.gameMode;
 		if (!enabled) {
-		releaseDestroy(client);
+			releaseDestroy(client);
 			return;
 		}
 

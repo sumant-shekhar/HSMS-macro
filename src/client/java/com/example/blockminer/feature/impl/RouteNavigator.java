@@ -187,6 +187,11 @@ public final class RouteNavigator extends AbstractFeature {
 			stop(NavError.NONE);
 			return;
 		}
+		if (client.gui.screen() != null) {
+			PathExecutor.getInstance().stop();
+			KeyBindUtil.stopMovement();
+			return;
+		}
 		switch (state) {
 			case ADVANCE -> advanceToNextWaypoint(client);
 			case ROTATE -> rotateToWaypoint();
