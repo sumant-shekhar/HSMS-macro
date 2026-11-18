@@ -2,6 +2,7 @@ package com.example.blockminer.util;
 
 import com.example.blockminer.commission.CommissionTabListParser;
 import com.example.blockminer.AngleUtil;
+import com.example.blockminer.location.LocationTextParser;
 import com.example.blockminer.location.LocationTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -123,7 +124,8 @@ public final class CommissionUtil {
 		int containerSlots = getContainerSlotCount(menu);
 		for (int index = 0; index < containerSlots; index++) {
 			for (String lore : getLore(menu.slots.get(index).getItem())) {
-				if (lore.equalsIgnoreCase(Strings.COMMISSION_COMPLETE_LORE)) {
+				String stripped = LocationTextParser.stripFormatting(lore).trim().toLowerCase(java.util.Locale.ROOT);
+				if (stripped.contains("completed") || stripped.contains("claim")) {
 					return index;
 				}
 			}
@@ -137,13 +139,19 @@ public final class CommissionUtil {
 		List<String> commissions = new ArrayList<>();
 		for (int index = 0; index < containerSlots; index++) {
 			ItemStack item = menu.slots.get(index).getItem();
-			if (item.isEmpty() || !item.getHoverName().getString().startsWith(Strings.COMMISSION_ITEM_PREFIX)) {
+			if (item.isEmpty()) {
+				continue;
+			}
+			String strippedName = LocationTextParser.stripFormatting(item.getHoverName().getString()).trim();
+			if (!strippedName.toLowerCase(java.util.Locale.ROOT).contains("commission")) {
 				continue;
 			}
 			List<String> lore = getLore(item);
 			for (int line = 0; line + 1 < lore.size(); line++) {
-				if (lore.get(line).isBlank() && !lore.get(line + 1).isBlank()) {
-					commissions.add(lore.get(line + 1));
+				String l1 = LocationTextParser.stripFormatting(lore.get(line)).trim();
+				String l2 = LocationTextParser.stripFormatting(lore.get(line + 1)).trim();
+				if (l1.isBlank() && !l2.isBlank()) {
+					commissions.add(l2);
 					break;
 				}
 			}
@@ -241,7 +249,7 @@ public final class CommissionUtil {
 		if (lore == null) {
 			return List.of();
 		}
-		return lore.lines().stream().map(Component::getString).toList();
+		return lore.lines().stream().map(c -> LocationTextParser.stripFormatting(c.getString())).toList();
 	}
 
 	public record MobListDebugEntry(Player mob, double distanceCost, double angleCost) {

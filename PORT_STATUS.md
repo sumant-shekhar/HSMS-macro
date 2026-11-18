@@ -17,6 +17,31 @@ All eight modules (01, 06, 04, 03, 02, 08, 07, and 05) are marked code-complete 
 
 ## Build and test notes
 
+- **Drill Right-Click Ability & Deep Audit Fixes (2026-11-18):**
+  - **Fixed Drill / Pickaxe Right-Click Ability Execution:**
+    - Root causes:
+      1. `Minecraft.startUseItem()` immediately aborts if `gameMode.isDestroying()` is true. During continuous block breaking, any right-click attempts failed silently without triggering the item ability.
+      2. `ApplyAbilityState.java` was an empty stub returning `ChoosingBlockState()` without executing an ability or right-click.
+      3. `BlockMiner.shouldApplyAbility()` relied on an unmanaged variable `applyAbilityRequested` which was never set.
+      4. `MinerState.java` (standalone block miner toggled via `~` or GUI) had zero ability execution logic.
+      5. `BlockMinerClient.java` only listened for `Pickobulus is now available!`, ignoring `Mining Speed Boost` and all other pickaxe abilities.
+      6. `InventoryUtil.holdMiningTool` skipped `Config.miningTool` if slot 1 had any item, and exact string matching failed against Hypixel formatted names (`§6Titanium Drill DR-X655 ✪`).
+    - Fixes:
+      1. Created `MinecraftAccessor` exposing `@Invoker("startUseItem")`, `@Invoker("startAttack")`, and `@Accessor("rightClickDelay")` getter/setter.
+      2. Updated `KeyBindUtil.rightClick()` to explicitly abort block destruction (`client.gameMode.stopDestroyBlock()`), reset `rightClickDelay` to 0, invoke `startUseItem()` on the client render thread via `MinecraftAccessor`, and fall back to `pressFor(keyUse)`.
+      3. Implemented `PickaxeAbilityTracker`: centralized ability tracking handling availability states, cooldown tracking from Hypixel chat (`You used your Mining Speed Boost Pickaxe Ability!`, cooldown remaining warnings, ability ready alerts), tool hotbar selection, and debounced ability execution.
+      4. Implemented `ApplyAbilityState` and wired ability execution into `BlockMiner.shouldApplyAbility()` and `MinerState` (on start, between blocks, and upon target block break).
+      5. Routed chat messages from `MixinClientPacketListener` and `BlockMinerClient` to `PickaxeAbilityTracker.onChat` for real-time cooldown tracking.
+  - **Lore Formatting & Match Fixes:**
+    - Root causes: Raw Minecraft formatting codes (`§a`, `§7`, `§6`) caused regex patterns (`DRILL_FUEL_PATTERN`) and string containment checks to fail.
+    - Fixes: Stripped formatting (`LocationTextParser.stripFormatting`) in `MenuInventory`, `CommissionUtil`, `FeatureInventory`, and `CommissionMacro.getDrillRemainingFuel()`.
+    - Added fallback in `PickaxeAbilityRetrievalTask` to `Mining Speed Boost` when `Pickobulus` is not present, avoiding task timeouts.
+  - **Prism Launcher Deep Log Audit Fixes:**
+    - Resolved Brigadier sibling argument ambiguity warning between `[mmfeature, mobkill, start, weapon]` and `[mmfeature, mobkill, start, mobs]` in `FeatureCommands.java`.
+    - Pinned `org.gradle.java.home` to Java 25 (`java-runtime-epsilon`) in `gradle.properties` to ensure reproducible builds regardless of host Arch Linux updates.
+  - **Build Verification:** `./gradlew build` completed cleanly (`BUILD SUCCESSFUL in 5s`), passing all 8 synthetic self-tests (including new `pickaxeAbilityTrackerSelfTest`). In-game verification pending.
+
+
 - **Click-to-Hold & Settings Keybinding Fixes (2026-11-18):**
   - **Fixed Manual Left-Click Hold when Macro is Off:**
     - Root cause: `MinerState.tick(Minecraft client)` called `releaseMining()` on every client tick when `!enabled`. In turn, `releaseMining()` called `setLeftClick(false)` which called `KeyBindUtil.setKeyBindState(client.options.keyAttack, false)`. This forcibly reset `keyAttack.isDown = false` on every tick. In Minecraft 26.2, `options.toggleAttack` in "Hold" mode checks `keyAttack.isDown()` in `continueAttack(...)`; because it was continuously cleared, manual clicks broke after 1 tick. In "Toggle" mode, `ToggleKeyMapping.setDown(false)` ignores `false` transitions, which masked the bug.

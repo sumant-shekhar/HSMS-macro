@@ -56,6 +56,7 @@ public final class BlockMiner {
 		this.error = Error.NONE;
 		this.targetBlockPos = null;
 		this.targetBlock = null;
+		PickaxeAbilityTracker.getInstance().reset();
 		transitionTo(new StartingState());
 		LOGGER.info("[blockminer] started with {} target block types", this.priorities.size());
 	}
@@ -123,12 +124,17 @@ public final class BlockMiner {
 		return Config.waitThresholdMs;
 	}
 
-	boolean shouldApplyAbility() {
-		return applyAbilityRequested;
+	public boolean shouldApplyAbility() {
+		return Config.usePickaxeAbility && PickaxeAbilityTracker.getInstance().isAvailable();
 	}
 
-	void setApplyAbilityRequested(boolean requested) {
+	public void setApplyAbilityRequested(boolean requested) {
 		applyAbilityRequested = requested;
+		if (requested) {
+			PickaxeAbilityTracker.getInstance().reset();
+		} else {
+			PickaxeAbilityTracker.getInstance().setAvailable(false);
+		}
 	}
 
 	void setTarget(BlockPos position, Block block) {

@@ -21,7 +21,7 @@ public final class PickaxeAbilityRetrievalTask extends AbstractInventoryTask<Aut
 			fail("Cannot retrieve pickaxe ability without a local player.");
 			return;
 		}
-		if (!Strings.HOTM_MENU_TITLE.equals(MenuInventory.title(client))) {
+		if (!MenuInventory.title(client).toLowerCase(java.util.Locale.ROOT).contains("heart of the mountain")) {
 			closeScreen();
 			client.player.connection.sendCommand("hotm");
 		}
@@ -33,13 +33,22 @@ public final class PickaxeAbilityRetrievalTask extends AbstractInventoryTask<Aut
 		if (taskStatus != TaskStatus.RUNNING || !timer.passed()) {
 			return;
 		}
-		if (!Strings.HOTM_MENU_TITLE.equals(MenuInventory.title(client))) {
+		if (!MenuInventory.title(client).toLowerCase(java.util.Locale.ROOT).contains("heart of the mountain")) {
 			fail("Could not open the Heart of the Mountain menu.");
 			return;
 		}
 		var item = MenuInventory.findItem(client, Strings.PICKOBULUS_ITEM_NAME);
 		if (item.isEmpty()) {
-			fail("Pickobulus was not present in the Heart of the Mountain menu.");
+			var speedItem = MenuInventory.findItem(client, Strings.MINING_SPEED_ITEM_NAME);
+			if (speedItem.isPresent()) {
+				pickaxeAbility = speedItem.get().getItem() == Blocks.EMERALD_BLOCK.asItem()
+						? AutoGetStats.PickaxeAbility.MINING_SPEED_BOOST
+						: AutoGetStats.PickaxeAbility.NONE;
+				taskStatus = TaskStatus.SUCCESS;
+				return;
+			}
+			pickaxeAbility = AutoGetStats.PickaxeAbility.MINING_SPEED_BOOST;
+			taskStatus = TaskStatus.SUCCESS;
 			return;
 		}
 		pickaxeAbility = item.get().getItem() == Blocks.EMERALD_BLOCK.asItem()

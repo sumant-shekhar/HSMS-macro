@@ -12,6 +12,7 @@ public final class Strings {
 			"(?:⸕\\s*)?Mining Speed\\s*:?\\s*([\\d,]+\\.?\\d*)";
 	public static final String MINING_BOOST_LORE_PATTERN = "\\+(\\d+)%"; // TODO(verify in-game)
 	public static final String PICKOBULUS_AVAILABLE_CHAT = "Pickobulus is now available!"; // TODO(verify in-game)
+	public static final String MINING_SPEED_BOOST_AVAILABLE_CHAT = "Mining Speed Boost is now available!";
 
 	public static final String WARP_NOT_SKYBLOCK_CHAT = "Oops! You are not on SkyBlock so we couldn't warp you!"; // TODO(verify in-game)
 	public static final String WARP_NO_SCROLL_CHAT = "You haven't unlocked this fast travel destination!"; // TODO(verify in-game)

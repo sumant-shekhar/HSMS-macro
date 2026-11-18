@@ -1,11 +1,14 @@
 package com.example.blockminer.util;
 
+import com.example.blockminer.location.LocationTextParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
+
+import java.util.Locale;
 
 public final class FeatureInventory {
 	private static final int PLAYER_MENU_SLOTS = 36;
@@ -59,7 +62,7 @@ public final class FeatureInventory {
 
 	public static String title(Minecraft client) {
 		Screen screen = client.gui.screen();
-		return screen == null ? "" : screen.getTitle().getString();
+		return screen == null ? "" : LocationTextParser.stripFormatting(screen.getTitle().getString()).trim();
 	}
 
 	public static AbstractContainerMenu menu(Minecraft client) {
@@ -92,7 +95,11 @@ public final class FeatureInventory {
 		return InventoryUtil.clickContainerSlot(slot, input, button);
 	}
 
-	private static boolean matches(ItemStack item, String exactName) {
-		return !item.isEmpty() && item.getHoverName().getString().equalsIgnoreCase(exactName);
+	private static boolean matches(ItemStack item, String name) {
+		if (item == null || item.isEmpty() || name == null || name.isBlank()) {
+			return false;
+		}
+		String itemName = LocationTextParser.stripFormatting(item.getHoverName().getString()).trim();
+		return itemName.equalsIgnoreCase(name) || itemName.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT));
 	}
 }

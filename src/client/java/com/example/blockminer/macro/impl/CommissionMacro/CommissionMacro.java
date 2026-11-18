@@ -2,6 +2,7 @@ package com.example.blockminer.macro.impl.CommissionMacro;
 
 import com.example.blockminer.Config;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
+import com.example.blockminer.location.LocationTextParser;
 import com.example.blockminer.location.LocationTracker;
 import com.example.blockminer.macro.AbstractMacro;
 import com.example.blockminer.macro.impl.CommissionMacro.states.CommissionMacroState;
@@ -168,9 +169,24 @@ public final class CommissionMacro extends AbstractMacro {
 		if (mc.player == null) {
 			return null;
 		}
-		int slot = InventoryUtil.MINING_TOOL_SLOT;
-		if (mc.player.getInventory().getItem(slot).isEmpty() && !Config.miningTool.isBlank()) {
-			slot = FeatureInventory.findInventoryItem(mc, Config.miningTool);
+		int slot = -1;
+		if (!Config.miningTool.isBlank()) {
+			slot = InventoryUtil.findHotbarItem(mc, Config.miningTool);
+		}
+		if (slot == -1) {
+			for (int i = 0; i < 9; i++) {
+				ItemStack stack = mc.player.getInventory().getItem(i);
+				if (!stack.isEmpty()) {
+					String name = LocationTextParser.stripFormatting(stack.getHoverName().getString()).toLowerCase(java.util.Locale.ROOT);
+					if (name.contains("drill")) {
+						slot = i;
+						break;
+					}
+				}
+			}
+		}
+		if (slot == -1 && !mc.player.getInventory().getItem(InventoryUtil.MINING_TOOL_SLOT).isEmpty()) {
+			slot = InventoryUtil.MINING_TOOL_SLOT;
 		}
 		if (slot == -1 || mc.player.getInventory().getItem(slot).isEmpty()) {
 			return null;
@@ -179,7 +195,8 @@ public final class CommissionMacro extends AbstractMacro {
 		ItemLore lore = tool.get(DataComponents.LORE);
 		if (lore != null) {
 			for (var line : lore.lines()) {
-				Matcher matcher = DRILL_FUEL_PATTERN.matcher(line.getString());
+				String strippedLine = LocationTextParser.stripFormatting(line.getString());
+				Matcher matcher = DRILL_FUEL_PATTERN.matcher(strippedLine);
 				if (matcher.find()) {
 					try {
 						return Integer.parseInt(matcher.group(1).replace(",", ""));
@@ -191,7 +208,7 @@ public final class CommissionMacro extends AbstractMacro {
 				}
 			}
 		}
-		String toolName = tool.isEmpty() ? Config.miningTool : tool.getHoverName().getString();
+		String toolName = LocationTextParser.stripFormatting(tool.isEmpty() ? Config.miningTool : tool.getHoverName().getString());
 		if (!fuelLoreWarningSent && toolName.toLowerCase(java.util.Locale.ROOT).contains("drill")) {
 			fuelLoreWarningSent = true;
 			warn("Drill fuel lore did not match the configured pattern; auto-refuel detection is unavailable.");

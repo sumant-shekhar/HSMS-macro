@@ -9,6 +9,7 @@
     "MixinMouseHandler",
     "StainedGlassPaneCollisionMixin",
     "accessor.KeyMappingAccessor",
+    "accessor.MinecraftAccessor",
     "location.PlayerTabOverlayAccessor"
   ],
   "injectors": {

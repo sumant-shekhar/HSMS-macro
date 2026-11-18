@@ -52,7 +52,6 @@ import java.util.Objects;
 public final class BlockMinerClient implements ClientModInitializer {
 	private static final String MOD_ID = "blockminer";
 	private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	private static final String PICKOBULUS_MESSAGE = Strings.PICKOBULUS_AVAILABLE_CHAT;
 	private static final MinerState MINER = new MinerState();
 	private static int autoClickIntervalTicks = 100;
 	public static final KeyMapping.Category BLOCKMINER_CATEGORY =
@@ -251,16 +250,12 @@ public final class BlockMinerClient implements ClientModInitializer {
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
 			MacroManager.getInstance().onChat(message.getString());
 			AutoChestUnlocker.getInstance().onChat(message.getString());
-			if (message.getString().contains(PICKOBULUS_MESSAGE)) {
-				rightClickWhenEnabled();
-			}
+			PickaxeAbilityTracker.getInstance().onChat(message.getString());
 		});
 		ClientReceiveMessageEvents.CHAT.register((message, playerChatMessage, sender, boundChatType, timeStamp) -> {
 			MacroManager.getInstance().onChat(message.getString());
 			AutoChestUnlocker.getInstance().onChat(message.getString());
-			if (message.getString().contains(PICKOBULUS_MESSAGE)) {
-				rightClickWhenEnabled();
-			}
+			PickaxeAbilityTracker.getInstance().onChat(message.getString());
 		});
 
 		HudElementRegistry.attachElementBefore(
@@ -440,16 +435,6 @@ public final class BlockMinerClient implements ClientModInitializer {
 				triggerLeftClick();
 			}
 		}
-	}
-
-	private static void rightClickWhenEnabled() {
-		Minecraft client = Minecraft.getInstance();
-		client.execute(() -> {
-			if (!MINER.isEnabled() || client.player == null) {
-				return;
-			}
-			triggerRightClick();
-		});
 	}
 
 	private static void toggle(Minecraft client) {

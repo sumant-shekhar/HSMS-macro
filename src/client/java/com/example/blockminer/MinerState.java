@@ -105,6 +105,7 @@ public final class MinerState {
 		}
 		enabled = true;
 		blacklistUntilTick.clear();
+		PickaxeAbilityTracker.getInstance().reset();
 		clearTarget(client);
 	}
 
@@ -169,6 +170,9 @@ public final class MinerState {
 		}
 
 		if (target == null) {
+			if (PickaxeAbilityTracker.getInstance().isAvailable()) {
+				PickaxeAbilityTracker.getInstance().executeAbility(client);
+			}
 			MiningTargets.SearchResult search =
 					MiningTargets.findTarget(client, player, blacklistUntilTick.keySet(), selectedMode);
 
@@ -240,6 +244,9 @@ public final class MinerState {
 		ticksOnTarget = 0;
 		precisionAimPoint = null;
 		lookAwayTicks = 0;
+		if (enabled && PickaxeAbilityTracker.getInstance().isAvailable()) {
+			PickaxeAbilityTracker.getInstance().executeAbility(client);
+		}
 	}
 
 	private void releaseMining() {

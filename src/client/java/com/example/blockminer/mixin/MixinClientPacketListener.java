@@ -1,5 +1,6 @@
 package com.example.blockminer.mixin;
 
+import com.example.blockminer.PickaxeAbilityTracker;
 import com.example.blockminer.feature.impl.AutoChestUnlocker;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -35,6 +36,8 @@ public abstract class MixinClientPacketListener {
 
 	@Inject(method = "handleSystemChat", at = @At("HEAD"))
 	private void blockminer$onSystemChat(ClientboundSystemChatPacket packet, CallbackInfo ci) {
-		AutoChestUnlocker.getInstance().onChat(packet.content().getString());
+		String text = packet.content().getString();
+		AutoChestUnlocker.getInstance().onChat(text);
+		PickaxeAbilityTracker.getInstance().onChat(text);
 	}
 }

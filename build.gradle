@@ -92,6 +92,14 @@ tasks.register('configJsonRoundTripSelfTest', JavaExec) {
 	mainClass = 'com.example.blockminer.ConfigJsonRoundTripSelfTest'
 }
 
+tasks.register('pickaxeAbilityTrackerSelfTest', JavaExec) {
+	group = 'verification'
+	description = 'Verifies pickaxe ability tracking and chat message triggers.'
+	dependsOn tasks.named('testClasses'), tasks.named('compileClientJava')
+	classpath = sourceSets.test.runtimeClasspath + sourceSets.client.runtimeClasspath
+	mainClass = 'com.example.blockminer.PickaxeAbilityTrackerSelfTest'
+}
+
 tasks.named('test', Test) {
 	failOnNoDiscoveredTests = false
 }
@@ -104,6 +112,7 @@ tasks.named('check') {
 	dependsOn tasks.named('commissionTabListParserSelfTest')
 	dependsOn tasks.named('routeGraphJsonSelfTest')
 	dependsOn tasks.named('configJsonRoundTripSelfTest')
+	dependsOn tasks.named('pickaxeAbilityTrackerSelfTest')
 }
 
 def modJarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }

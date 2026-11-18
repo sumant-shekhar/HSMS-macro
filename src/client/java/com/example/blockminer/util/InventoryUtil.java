@@ -37,16 +37,16 @@ public final class InventoryUtil {
 		if (client.player == null) {
 			return false;
 		}
-		if (!client.player.getInventory().getItem(WEAPON_SLOT).isEmpty()) {
-			client.player.getInventory().setSelectedSlot(WEAPON_SLOT);
-			return true;
-		}
 		if (!com.example.blockminer.Config.slayerWeapon.isBlank()) {
 			int slot = findHotbarItem(client, com.example.blockminer.Config.slayerWeapon);
 			if (slot >= 0) {
 				client.player.getInventory().setSelectedSlot(slot);
 				return true;
 			}
+		}
+		if (!client.player.getInventory().getItem(WEAPON_SLOT).isEmpty()) {
+			client.player.getInventory().setSelectedSlot(WEAPON_SLOT);
+			return true;
 		}
 		client.player.getInventory().setSelectedSlot(WEAPON_SLOT);
 		return !client.player.getInventory().getItem(WEAPON_SLOT).isEmpty();
@@ -56,16 +56,26 @@ public final class InventoryUtil {
 		if (client.player == null) {
 			return false;
 		}
-		if (!client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty()) {
-			client.player.getInventory().setSelectedSlot(MINING_TOOL_SLOT);
-			return true;
-		}
 		if (!com.example.blockminer.Config.miningTool.isBlank()) {
 			int slot = findHotbarItem(client, com.example.blockminer.Config.miningTool);
 			if (slot >= 0) {
 				client.player.getInventory().setSelectedSlot(slot);
 				return true;
 			}
+		}
+		for (int slot = 0; slot < HOTBAR_SIZE; slot++) {
+			ItemStack stack = client.player.getInventory().getItem(slot);
+			if (!stack.isEmpty()) {
+				String name = stripFormatting(stack.getHoverName().getString()).toLowerCase(Locale.ROOT);
+				if (name.contains("drill") || name.contains("pickaxe") || name.contains("gauntlet")) {
+					client.player.getInventory().setSelectedSlot(slot);
+					return true;
+				}
+			}
+		}
+		if (!client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty()) {
+			client.player.getInventory().setSelectedSlot(MINING_TOOL_SLOT);
+			return true;
 		}
 		client.player.getInventory().setSelectedSlot(MINING_TOOL_SLOT);
 		return !client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty();
@@ -74,10 +84,6 @@ public final class InventoryUtil {
 	public static boolean holdTeleportTool(Minecraft client) {
 		if (client.player == null) {
 			return false;
-		}
-		if (!client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty()) {
-			client.player.getInventory().setSelectedSlot(TELEPORT_TOOL_SLOT);
-			return true;
 		}
 		int slot = findHotbarItem(client, Strings.ASPECT_OF_THE_VOID_ITEM_NAME);
 		if (slot >= 0) {
@@ -89,6 +95,10 @@ public final class InventoryUtil {
 			client.player.getInventory().setSelectedSlot(slot);
 			return true;
 		}
+		if (!client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty()) {
+			client.player.getInventory().setSelectedSlot(TELEPORT_TOOL_SLOT);
+			return true;
+		}
 		client.player.getInventory().setSelectedSlot(TELEPORT_TOOL_SLOT);
 		return !client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty();
 	}
@@ -97,33 +107,42 @@ public final class InventoryUtil {
 		if (client.player == null) {
 			return false;
 		}
-		if (!client.player.getInventory().getItem(WEAPON_SLOT).isEmpty()) {
+		if (!com.example.blockminer.Config.slayerWeapon.isBlank()
+				&& findHotbarItem(client, com.example.blockminer.Config.slayerWeapon) >= 0) {
 			return true;
 		}
-		return !com.example.blockminer.Config.slayerWeapon.isBlank()
-				&& findHotbarItem(client, com.example.blockminer.Config.slayerWeapon) >= 0;
+		return !client.player.getInventory().getItem(WEAPON_SLOT).isEmpty();
 	}
 
 	public static boolean isMiningToolPresent(Minecraft client) {
 		if (client.player == null) {
 			return false;
 		}
-		if (!client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty()) {
+		if (!com.example.blockminer.Config.miningTool.isBlank()
+				&& findHotbarItem(client, com.example.blockminer.Config.miningTool) >= 0) {
 			return true;
 		}
-		return !com.example.blockminer.Config.miningTool.isBlank()
-				&& findHotbarItem(client, com.example.blockminer.Config.miningTool) >= 0;
+		for (int slot = 0; slot < HOTBAR_SIZE; slot++) {
+			ItemStack stack = client.player.getInventory().getItem(slot);
+			if (!stack.isEmpty()) {
+				String name = stripFormatting(stack.getHoverName().getString()).toLowerCase(Locale.ROOT);
+				if (name.contains("drill") || name.contains("pickaxe") || name.contains("gauntlet")) {
+					return true;
+				}
+			}
+		}
+		return !client.player.getInventory().getItem(MINING_TOOL_SLOT).isEmpty();
 	}
 
 	public static boolean isTeleportToolPresent(Minecraft client) {
 		if (client.player == null) {
 			return false;
 		}
-		if (!client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty()) {
+		if (findHotbarItem(client, Strings.ASPECT_OF_THE_VOID_ITEM_NAME) >= 0
+				|| findHotbarItem(client, Strings.ASPECT_OF_THE_END_ITEM_NAME) >= 0) {
 			return true;
 		}
-		return findHotbarItem(client, Strings.ASPECT_OF_THE_VOID_ITEM_NAME) >= 0
-				|| findHotbarItem(client, Strings.ASPECT_OF_THE_END_ITEM_NAME) >= 0;
+		return !client.player.getInventory().getItem(TELEPORT_TOOL_SLOT).isEmpty();
 	}
 
 	public static boolean holdItem(String itemName) {
@@ -139,13 +158,18 @@ public final class InventoryUtil {
 		return true;
 	}
 
-	public static int findHotbarItem(Minecraft client, String exactName) {
-		if (client.player == null || exactName == null || exactName.isBlank()) {
+	public static int findHotbarItem(Minecraft client, String name) {
+		if (client.player == null || name == null || name.isBlank()) {
 			return -1;
 		}
 		Inventory inventory = client.player.getInventory();
 		for (int slot = 0; slot < HOTBAR_SIZE; slot++) {
-			if (matches(inventory.getItem(slot), exactName, true)) {
+			if (matches(inventory.getItem(slot), name, true)) {
+				return slot;
+			}
+		}
+		for (int slot = 0; slot < HOTBAR_SIZE; slot++) {
+			if (matches(inventory.getItem(slot), name, false)) {
 				return slot;
 			}
 		}

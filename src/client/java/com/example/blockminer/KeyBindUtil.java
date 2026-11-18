@@ -1,6 +1,7 @@
 package com.example.blockminer;
 
 import com.example.blockminer.mixin.accessor.KeyMappingAccessor;
+import com.example.blockminer.mixin.accessor.MinecraftAccessor;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
@@ -84,12 +85,36 @@ public final class KeyBindUtil {
 	}
 
 	public static void rightClick() {
+		if (CLIENT.player == null) {
+			return;
+		}
+		if (!CLIENT.isSameThread()) {
+			CLIENT.execute(KeyBindUtil::rightClick);
+			return;
+		}
+		if (CLIENT.gameMode != null && CLIENT.gameMode.isDestroying()) {
+			CLIENT.gameMode.stopDestroyBlock();
+		}
+		if (CLIENT instanceof MinecraftAccessor accessor) {
+			accessor.blockminer$setRightClickDelay(0);
+			accessor.blockminer$startUseItem();
+		}
 		if (CLIENT.options != null && CLIENT.options.keyUse != null) {
 			pressFor(CLIENT.options.keyUse, 100L);
 		}
 	}
 
 	public static void leftClick() {
+		if (CLIENT.player == null) {
+			return;
+		}
+		if (!CLIENT.isSameThread()) {
+			CLIENT.execute(KeyBindUtil::leftClick);
+			return;
+		}
+		if (CLIENT instanceof MinecraftAccessor accessor) {
+			accessor.blockminer$startAttack();
+		}
 		if (CLIENT.options != null && CLIENT.options.keyAttack != null) {
 			pressFor(CLIENT.options.keyAttack, 80L);
 		}

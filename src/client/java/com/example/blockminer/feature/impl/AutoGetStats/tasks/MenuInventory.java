@@ -1,5 +1,6 @@
 package com.example.blockminer.feature.impl.AutoGetStats.tasks;
 
+import com.example.blockminer.location.LocationTextParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -12,6 +13,7 @@ import net.minecraft.world.item.component.ItemLore;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public final class MenuInventory {
@@ -20,18 +22,30 @@ public final class MenuInventory {
 
 	public static String title(Minecraft client) {
 		Screen screen = client.gui.screen();
-		return screen == null ? "" : screen.getTitle().getString();
+		return screen == null ? "" : LocationTextParser.stripFormatting(screen.getTitle().getString()).trim();
 	}
 
-	public static Optional<ItemStack> findItem(Minecraft client, String exactName) {
+	public static Optional<ItemStack> findItem(Minecraft client, String name) {
 		AbstractContainerMenu menu = getMenu(client);
-		if (menu == null) {
+		if (menu == null || name == null || name.isBlank()) {
 			return Optional.empty();
 		}
 		for (Slot slot : menu.slots) {
 			ItemStack item = slot.getItem();
-			if (!item.isEmpty() && item.getHoverName().getString().equalsIgnoreCase(exactName)) {
-				return Optional.of(item);
+			if (!item.isEmpty()) {
+				String itemName = LocationTextParser.stripFormatting(item.getHoverName().getString()).trim();
+				if (itemName.equalsIgnoreCase(name)) {
+					return Optional.of(item);
+				}
+			}
+		}
+		for (Slot slot : menu.slots) {
+			ItemStack item = slot.getItem();
+			if (!item.isEmpty()) {
+				String itemName = LocationTextParser.stripFormatting(item.getHoverName().getString()).trim();
+				if (itemName.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT))) {
+					return Optional.of(item);
+				}
 			}
 		}
 		return Optional.empty();
@@ -44,7 +58,7 @@ public final class MenuInventory {
 		}
 		List<String> lines = new ArrayList<>(lore.lines().size());
 		for (Component line : lore.lines()) {
-			lines.add(line.getString());
+			lines.add(LocationTextParser.stripFormatting(line.getString()));
 		}
 		return List.copyOf(lines);
 	}
