@@ -2,7 +2,7 @@
 
 Port order: `01` → `06` → `04` → `03` → `02` → `08` → `07` → `05`.
 
-All eight modules (01, 06, 04, 03, 02, 08, 07, and 05) are marked code-complete and build/self-test verified. In-game verification is still outstanding for every module; those deferred visual and live-server checks are not blockers to code completion.
+All eight modules (01, 06, 04, 03, 02, 08, 07, and 05) are marked code-complete and build/self-test verified. Initial Minecraft 26.2/Hypixel testing found the issues summarized below; post-fix in-game retesting remains outstanding.
 
 | Done | Module | Status |
 |---|---|---|
@@ -17,6 +17,8 @@ All eight modules (01, 06, 04, 03, 02, 08, 07, and 05) are marked code-complete 
 
 ## Build and test notes
 
+- **Live Hypixel test findings and fixes (2026-11-17):** In-game testing showed `/mmconfig` was immediately closed when invoked from chat, the sidebar's `\uE067` resource-pack marker prevented Lava Springs parsing, and Mining Speed lore did not match the profile item text. `/mmconfig` now queues opening until `END_CLIENT_TICK`; location parsing recognizes and strips `\uE067`; Mining Speed lore matching accepts an optional `⸕` prefix, strips formatting, ignores case, and logs stripped lore lines when unmatched. Required-argument command roots now show usage for `/mmdump`, `/mmrot`, `/mmkey`, `/mmmine`, `/mmpath`, `/mmwalk`, `/mmfeature`, `/mmroute`, and `/mmwarp`. The prior live test verified Mining Boost `250` and `PICKOBULUS`; all fixes need post-change in-game retesting.
+- **Live-fix clean build and self-tests (2026-11-17):** `JAVA_HOME=/tmp/macro-jdk25 PATH="/tmp/macro-jdk25/bin:$PATH" ./gradlew clean build` passed on JDK 25 (15 actionable tasks). The new location fixture passed with the eight parser scenarios; the build also passed all other pathfinding, adapter, randomized heap, commission, route-graph, and config checks. This verifies compilation and synthetic tests, not post-fix in-game behavior.
 - Latest Modules 04/03 validation used Temurin JDK 25.0.5: `./gradlew clean build pathfindingSelfTest minHeapSelfTest locationTextParserSelfTest commissionTabListParserSelfTest` completed successfully (12 actionable tasks). The build's check ran all four synthetic self-tests; results are recorded under each module below. In-game behavior remains untested.
 - The prior Module 06 `./gradlew clean build` passed on Gradle 9.7.1 / Java 27 with a JVM restricted-method warning and a Gradle immutable-cache warning. Its verification details are recorded in the module 06 section below.
 - **Module 05 clean build (2026-11-17):** `JAVA_HOME=/tmp/macro-jdk25 PATH="/tmp/macro-jdk25/bin:$PATH" ./gradlew clean build` passed on JDK 25; this includes the new config JSON round-trip check and all existing synthetic checks. This verifies compilation and synthetic tests only, not in-game rendering or interaction.

@@ -33,6 +33,10 @@ public final class LocationDumpCommand {
 	public static void register() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
 				dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmdump")
+						.executes(context -> {
+							context.getSource().sendFeedback(Component.literal("Usage: /mmdump <label>."));
+							return 0;
+						})
 						.then(com.mojang.brigadier.builder.RequiredArgumentBuilder
 								.<FabricClientCommandSource, String>argument("label", StringArgumentType.word())
 								.executes(context -> capture(

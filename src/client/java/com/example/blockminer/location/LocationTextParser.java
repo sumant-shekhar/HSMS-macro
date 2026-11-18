@@ -27,7 +27,7 @@ public final class LocationTextParser {
 		String cleanedSubLocation = null;
 		SubLocation subLocation = null;
 		for (String line : sidebarLines) {
-			if (!line.contains("⏣") && !line.contains("ф")) {
+			if (!line.contains("⏣") && !line.contains("ф") && !line.contains("\uE067")) {
 				continue;
 			}
 			rawSubLocationLine = line;
@@ -47,7 +47,7 @@ public final class LocationTextParser {
 	}
 
 	public static String sanitizeScoreboardLine(String line) {
-		return stripFormatting(line).replace("⏣", "").replace("ф", "");
+		return stripFormatting(line).replace("⏣", "").replace("ф", "").replace("\uE067", "");
 	}
 
 	public static String stripFormatting(String text) {

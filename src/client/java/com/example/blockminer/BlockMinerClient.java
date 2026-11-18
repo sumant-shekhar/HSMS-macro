@@ -5,6 +5,7 @@ import com.example.blockminer.command.FeatureCommands;
 import com.example.blockminer.command.MacroCommands;
 import com.example.blockminer.command.RouteBuilderCommand;
 import com.example.blockminer.command.ConfigCommands;
+import com.example.blockminer.ConfigScreen;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
 import com.example.blockminer.feature.impl.RouteNavigator;
 import com.example.blockminer.feature.FeatureManager;
@@ -58,6 +59,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 	private static KeyMapping getStatsKey;
 	private static boolean openSettingsPending;
 	private static boolean openModeTabPending;
+	private static boolean openConfigPending;
 	private static boolean autoClickEnabled;
 	private static int autoClickTicks;
 
@@ -110,6 +112,10 @@ public final class BlockMinerClient implements ClientModInitializer {
 			}
 			if (getStatsKey.consumeClick()) {
 				AutoGetStats.getInstance().startDefaultTasks();
+			}
+			if (openConfigPending) {
+				openConfigPending = false;
+				client.setScreenAndShow(new ConfigScreen());
 			}
 			if (openSettingsPending) {
 				openSettingsPending = false;
@@ -198,6 +204,10 @@ public final class BlockMinerClient implements ClientModInitializer {
 			MacroManager.getInstance().onWorldRender();
 			RenderUtil.renderQueued();
 		});
+	}
+
+	public static void requestConfigScreen() {
+		openConfigPending = true;
 	}
 
 	private static boolean isBlockMinerChatCommand(String command) {

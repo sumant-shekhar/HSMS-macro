@@ -67,7 +67,14 @@ public final class PathfindingDebugCommands {
         RequiredArgumentBuilder<FabricClientCommandSource, Integer> x =
                 RequiredArgumentBuilder.<FabricClientCommandSource, Integer>argument("x", IntegerArgumentType.integer())
                         .then(y);
-        dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal(name).then(x));
+        dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal(name)
+                .executes(context -> {
+                    context.getSource().sendFeedback(Component.literal(walk
+                            ? "Usage: /mmwalk <x> <y> <z> | /mmwalk stop."
+                            : "Usage: /mmpath <x> <y> <z>."));
+                    return 0;
+                })
+                .then(x));
     }
 
     private static int requestPath(FabricClientCommandSource source, int x, int y, int z, boolean walk) {

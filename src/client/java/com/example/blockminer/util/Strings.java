@@ -8,7 +8,8 @@ public final class Strings {
 	public static final String PROFILE_ITEM_NAME = "Your SkyBlock Profile"; // TODO(verify in-game)
 	public static final String MINING_SPEED_ITEM_NAME = "Mining Speed Boost"; // TODO(verify in-game)
 	public static final String PICKOBULUS_ITEM_NAME = "Pickobulus"; // TODO(verify in-game)
-	public static final String MINING_SPEED_LORE_PATTERN = "Mining Speed\\s+([\\d,]+\\.?\\d*)"; // TODO(verify in-game)
+	public static final String MINING_SPEED_LORE_PATTERN =
+			"(?:⸕\\s*)?Mining Speed\\s*:?\\s*([\\d,]+\\.?\\d*)";
 	public static final String MINING_BOOST_LORE_PATTERN = "\\+(\\d+)%"; // TODO(verify in-game)
 	public static final String PICKOBULUS_AVAILABLE_CHAT = "Pickobulus is now available!"; // TODO(verify in-game)
 

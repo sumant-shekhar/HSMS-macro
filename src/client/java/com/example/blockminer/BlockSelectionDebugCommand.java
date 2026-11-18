@@ -32,6 +32,11 @@ public final class BlockSelectionDebugCommand {
 							))));
 
 			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmmine")
+					.executes(context -> {
+						context.getSource().sendFeedback(Component.literal(
+								"Usage: /mmmine start [block_id ...] [priority] | /mmmine stop."));
+						return 0;
+					})
 					.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("start")
 							.executes(context -> startMining(context.getSource(), List.of(), 1))
 							.then(com.mojang.brigadier.builder.RequiredArgumentBuilder

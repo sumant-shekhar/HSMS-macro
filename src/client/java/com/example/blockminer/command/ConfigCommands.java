@@ -1,6 +1,6 @@
 package com.example.blockminer.command;
 
-import com.example.blockminer.ConfigScreen;
+import com.example.blockminer.BlockMinerClient;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -14,8 +14,8 @@ public final class ConfigCommands {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
 				dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmconfig")
 						.executes(context -> {
-							context.getSource().getClient().setScreenAndShow(new ConfigScreen());
-							context.getSource().sendFeedback(Component.literal("Opened Block Miner configuration."));
+							BlockMinerClient.requestConfigScreen();
+							context.getSource().sendFeedback(Component.literal("Opening Block Miner configuration."));
 							return 1;
 						})));
 	}

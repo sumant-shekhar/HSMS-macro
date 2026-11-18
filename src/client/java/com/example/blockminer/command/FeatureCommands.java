@@ -34,6 +34,11 @@ public final class FeatureCommands {
 					}));
 
 			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmwarp")
+					.executes(context -> {
+						context.getSource().sendFeedback(Component.literal(
+								"Usage: /mmwarp location <destination> | /mmwarp sub <destination> | /mmwarp stop."));
+						return 0;
+					})
 					.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("stop")
 							.executes(context -> {
 								AutoWarp.getInstance().stop();
@@ -70,6 +75,11 @@ public final class FeatureCommands {
 									}))));
 
 			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmroute")
+					.executes(context -> {
+						context.getSource().sendFeedback(Component.literal(
+								"Usage: /mmroute list|select <name>|start|stop|goto <index>|graph."));
+						return 0;
+					})
 					.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("list")
 							.executes(context -> {
 								String routes = RouteHandler.getInstance().getRoutes().keySet().stream()
@@ -120,6 +130,12 @@ public final class FeatureCommands {
 							})));
 
 			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmfeature")
+					.executes(context -> {
+						context.getSource().sendFeedback(Component.literal(
+								"Usage: /mmfeature mobkill start <weapon> <mobs>|stop; commission start|stop; "
+										+ "chest start|stop; drill start volta|oil_barrel <drill>|stop; lag|lagstatus."));
+						return 0;
+					})
 					.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mobkill")
 							.then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("start")
 									.then(com.mojang.brigadier.builder.RequiredArgumentBuilder

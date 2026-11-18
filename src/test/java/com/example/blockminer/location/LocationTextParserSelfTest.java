@@ -10,12 +10,13 @@ public final class LocationTextParserSelfTest {
 	public static void main(String[] args) {
 		parsesSyntheticTabAndSidebarStrings();
 		parsesAlternateSyntheticSubLocationMarker();
+		parsesHypixelResourcePackSubLocationMarker();
 		parsesDungeonHeaderAndUnicodeScoreboardName();
 		handlesUnknownNamesAndFormatting();
 		matchesSyntheticVanillaTabListOrder();
 		preservesLocationOrdinalContract();
 		parsesColdAndResetMessages();
-		System.out.println("Location text parser self-test passed (synthetic fixtures; 7 scenarios).");
+		System.out.println("Location text parser self-test passed (synthetic fixtures; 8 scenarios).");
 	}
 
 	private static void parsesSyntheticTabAndSidebarStrings() {
@@ -43,6 +44,15 @@ public final class LocationTextParserSelfTest {
 		);
 		assertEquals(SubLocation.GOBLIN_BURROWS, parsed.subLocation(), "alternate-marker sub-location");
 		assertEquals("Goblin Burrows", parsed.cleanedSubLocation(), "alternate-marker cleaned text");
+	}
+
+	private static void parsesHypixelResourcePackSubLocationMarker() {
+		LocationTextParser.ParsedText parsed = LocationTextParser.parse(
+				List.of("Area: Dwarven Mines"),
+				List.of("§7\uE067 §bLava Spri§s§bngs")
+		);
+		assertEquals(Location.DWARVEN_MINES, parsed.location(), "resource-pack area");
+		assertEquals(SubLocation.LAVA_SPRINGS, parsed.subLocation(), "resource-pack sub-location");
 	}
 
 	private static void parsesDungeonHeaderAndUnicodeScoreboardName() {

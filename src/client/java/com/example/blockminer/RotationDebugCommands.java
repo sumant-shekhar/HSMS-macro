@@ -47,7 +47,12 @@ public final class RotationDebugCommands {
 					RequiredArgumentBuilder.<FabricClientCommandSource, Float>argument(
 							"yaw", FloatArgumentType.floatArg(-360000.0F, 360000.0F))
 							.then(pitch);
-			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmrot").then(yaw));
+			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmrot")
+					.executes(context -> {
+						context.getSource().sendFeedback(Component.literal("Usage: /mmrot <yaw> <pitch> <ms>."));
+						return 0;
+					})
+					.then(yaw));
 
 			RequiredArgumentBuilder<FabricClientCommandSource, Long> keyDuration =
 					RequiredArgumentBuilder.<FabricClientCommandSource, Long>argument(
@@ -72,7 +77,12 @@ public final class RotationDebugCommands {
 					RequiredArgumentBuilder.<FabricClientCommandSource, String>argument(
 							"key", StringArgumentType.word())
 							.then(keyDuration);
-			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmkey").then(key));
+			dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("mmkey")
+					.executes(context -> {
+						context.getSource().sendFeedback(Component.literal("Usage: /mmkey <key> <ms>."));
+						return 0;
+					})
+					.then(key));
 		});
 	}
 }
