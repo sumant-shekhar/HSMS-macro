@@ -1,5 +1,11 @@
 {
+	"key.category.blockminer.main": "Mighty Miner",
 	"key.blockminer.open_config": "Open Block Miner Settings",
+	"key.blockminer.toggle_macro": "Toggle Macro",
+	"key.blockminer.toggle_route_builder": "Toggle Route Builder",
+	"key.blockminer.route_builder_add_walk": "Route Builder: Add Walk Node",
+	"key.blockminer.route_builder_add_etherwarp": "Route Builder: Add Etherwarp Node",
+	"key.blockminer.route_builder_remove_node": "Route Builder: Remove Last Node",
 	"key.blockminer.toggle_route_navigation": "Toggle Route Navigation",
 	"key.blockminer.retrieve_mining_stats": "Retrieve Mining Stats"
 }

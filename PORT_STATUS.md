@@ -17,6 +17,25 @@ All eight modules (01, 06, 04, 03, 02, 08, 07, and 05) are marked code-complete 
 
 ## Build and test notes
 
+- **Click-to-Hold & Settings Keybinding Fixes (2026-11-18):**
+  - **Fixed Manual Left-Click Hold when Macro is Off:**
+    - Root cause: `MinerState.tick(Minecraft client)` called `releaseMining()` on every client tick when `!enabled`. In turn, `releaseMining()` called `setLeftClick(false)` which called `KeyBindUtil.setKeyBindState(client.options.keyAttack, false)`. This forcibly reset `keyAttack.isDown = false` on every tick. In Minecraft 26.2, `options.toggleAttack` in "Hold" mode checks `keyAttack.isDown()` in `continueAttack(...)`; because it was continuously cleared, manual clicks broke after 1 tick. In "Toggle" mode, `ToggleKeyMapping.setDown(false)` ignores `false` transitions, which masked the bug.
+    - Fix: Removed `releaseMining()` from the `!enabled` idle branch in `MinerState.tick()`; `releaseMining()` is now only called once upon stopping or clearing targets.
+    - In `KeyBindUtil.java`: Introduced `BOT_HELD_KEYS` to track only keypresses initiated by the bot/macros. `KeyBindUtil.tick()` and `areAllKeybindsReleased()` now only inspect and release bot-held keys, preventing interference with manual player keys and settings navigation.
+  - **Fixed Keybinding Configuration & Dedicated Category:**
+    - Root causes:
+      1. Keybinds for "Toggle Macro", "Toggle Route Builder", "Add Walk Node", "Add Etherwarp Node", and "Remove Last Node" were not registered with Fabric's `KeyMappingHelper`, so they were absent from Minecraft's Controls -> Key Binds menu and did not trigger in-game.
+      2. In `BlockMinerScreen` SETTINGS tab, keybindings were rendered as non-interactive static text strings with hardcoded key names.
+      3. In `BlockMinerClient.handleRawKeyPress()`, `openConfigKey` checked a hardcoded `GLFW_KEY_RIGHT_SHIFT` fallback that bypassed rebindings and intercepted keys during assignment.
+    - Fixes:
+      1. Registered a dedicated `KeyMapping.Category`: `"Mighty Miner"` (`key.category.blockminer.main`).
+      2. Registered all 8 mod keybindings with Fabric's `KeyMappingHelper` and added all translation keys to `en_us.json`.
+      3. Added in-game `consumeClick()` dispatch for all 8 keybindings in `ClientTickEvents.END_CLIENT_TICK` (Toggle Macro, Route Builder, Add Walk, Add Etherwarp, Remove Node, Route Navigation, Retrieve Mining Stats, Control Center).
+      4. Overhauled `BlockMinerScreen` SETTINGS tab: replaced static text with interactive `ModernKeybindWidget` rows that display the live bound key and allow one-click re-assignment (listening for any keyboard key or mouse button, with Escape to unbind/clear).
+      5. Added an `"Open Controls (Key Binds)..."` button in the SETTINGS tab to jump directly to Minecraft's native `KeyBindsScreen`.
+      6. Updated `handleRawKeyPress` to bypass interception when `BlockMinerScreen.isRebindingKey()` is active and use dynamic `openConfigKey.matches(event)`.
+  - **Build Verification:** `./gradlew build` completed cleanly (`BUILD SUCCESSFUL in 5s`), passing all 7 synthetic self-tests. In-game verification pending.
+
 - **Hotbar Slot Layout & Dwarven Mines Emissary Locations (2026-11-18):**
   - **Fixed Hotbar Slot Layout:**
     - Standardized hotbar tool slots:

@@ -7,9 +7,12 @@ import com.example.blockminer.handler.RouteHandler;
 import com.example.blockminer.location.LocationTracker;
 import com.example.blockminer.macro.AbstractMacro;
 import com.example.blockminer.macro.MacroManager;
+import com.example.blockminer.mixin.accessor.KeyMappingAccessor;
 import com.example.blockminer.util.helper.route.Route;
 import com.example.blockminer.util.helper.route.RouteWaypoint;
 import com.example.blockminer.util.helper.route.WaypointType;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -18,6 +21,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
@@ -72,6 +76,11 @@ public class BlockMinerScreen extends Screen {
 	private Tab activeTab = Tab.DASHBOARD;
 	private String statusMessage = "";
 	private long statusMessageExpireTick = 0;
+	private KeyMapping selectedKeyForRebind = null;
+
+	public boolean isRebindingKey() {
+		return selectedKeyForRebind != null;
+	}
 
 	public BlockMinerScreen() {
 		this(Tab.DASHBOARD);
@@ -816,17 +825,41 @@ public class BlockMinerScreen extends Screen {
 				"Ticks between automated clicks (20 ticks = 1 sec)", 1, 40, BlockMinerClient.getAutoClickIntervalTicks(), "ticks", true,
 				v -> BlockMinerClient.setAutoClickIntervalTicks(v.intValue())));
 
-		// Right: Config Actions
+		// Right: Keybinds & Config Actions
 		int rightX = rightCol + 6;
 		int rightW = colW - 12;
-		rowY = y + 22 + rowGap * 4;
+		int rY = y + 22;
+		int rowH = 16;
+		int gap = 2;
 
-		addRenderableWidget(new ModernButton(rightX, rowY, rightW, 20, Component.literal("Save Config to Disk"),
+		addRenderableWidget(new ModernKeybindWidget(rightX, rY, rightW, rowH, "Control Center", BlockMinerClient.getOpenConfigKey()));
+		rY += rowH + gap;
+		addRenderableWidget(new ModernKeybindWidget(rightX, rY, rightW, rowH, "Toggle Macro", BlockMinerClient.getToggleMacroKey()));
+		rY += rowH + gap;
+		addRenderableWidget(new ModernKeybindWidget(rightX, rY, rightW, rowH, "Route Builder", BlockMinerClient.getRouteBuilderKey()));
+		rY += rowH + gap;
+		addRenderableWidget(new ModernKeybindWidget(rightX, rY, rightW, rowH, "Add Walk Node", BlockMinerClient.getRouteBuilderAddWalkKey()));
+		rY += rowH + gap;
+		addRenderableWidget(new ModernKeybindWidget(rightX, rY, rightW, rowH, "Add Etherwarp", BlockMinerClient.getRouteBuilderAddEtherwarpKey()));
+		rY += rowH + gap;
+		addRenderableWidget(new ModernKeybindWidget(rightX, rY, rightW, rowH, "Remove Node", BlockMinerClient.getRouteBuilderRemoveNodeKey()));
+		rY += rowH + gap + 3;
+
+		addRenderableWidget(new ModernButton(rightX, rY, rightW, 18, Component.literal("Open Controls (Key Binds)..."),
+				"Open Minecraft Controls and Key Binds screen",
+				btn -> {
+					if (minecraft != null) {
+						minecraft.setScreenAndShow(new KeyBindsScreen(this, minecraft.options));
+					}
+				}, false, false));
+		rY += 21;
+
+		addRenderableWidget(new ModernButton(rightX, rY, rightW, 18, Component.literal("Save Config to Disk"),
 				"Write current settings to config/blockminer.json",
 				btn -> saveConfigSafely(), false, false));
-		rowY += rowGap;
+		rY += 20;
 
-		addRenderableWidget(new ModernButton(rightX, rowY, rightW, 20, Component.literal("Reload Config"),
+		addRenderableWidget(new ModernButton(rightX, rY, rightW, 18, Component.literal("Reload Config"),
 				"Reload settings from config/blockminer.json",
 				btn -> {
 					try {
@@ -837,9 +870,9 @@ public class BlockMinerScreen extends Screen {
 						setStatus("Error reloading config: " + ex.getMessage());
 					}
 				}, false, false));
-		rowY += rowGap;
+		rY += 20;
 
-		addRenderableWidget(new ModernButton(rightX, rowY, rightW, 20, Component.literal("Reset to Defaults"),
+		addRenderableWidget(new ModernButton(rightX, rY, rightW, 18, Component.literal("Reset to Defaults"),
 				"Restore all settings to original factory defaults",
 				btn -> resetAllToDefaults(), true, false));
 	}
@@ -911,8 +944,6 @@ public class BlockMinerScreen extends Screen {
 			renderCombatInfoCard(graphics, rightCol, contentY + 144, colW, contentH - 148);
 		} else if (activeTab == Tab.ROUTES) {
 			renderRouteStats(graphics, rightCol, contentY + 144, colW, contentH - 148);
-		} else if (activeTab == Tab.SETTINGS) {
-			renderKeybindInfo(graphics, rightCol, contentY, colW, 114);
 		}
 
 		// Footer Status Feedback
@@ -1123,28 +1154,32 @@ public class BlockMinerScreen extends Screen {
 		drawMetricRow(graphics, font, x + 10, lineY, w - 20, "Walk Nodes", String.valueOf(walkNodes), 0xFF38BDF8);
 	}
 
-	private void renderKeybindInfo(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
-		Font font = Minecraft.getInstance().font;
-		int lineY = y + 24;
-		int lineGap = 15;
-
-		drawMetricRow(graphics, font, x + 8, lineY, w - 16, "Control Center", "Right Shift", 0xFF00E5A8);
-		lineY += lineGap;
-		drawMetricRow(graphics, font, x + 8, lineY, w - 16, "Toggle Macro", "Grave (~)", 0xFF38BDF8);
-		lineY += lineGap;
-		drawMetricRow(graphics, font, x + 8, lineY, w - 16, "Route Builder", "Left Bracket ([)", 0xFFE2E8F0);
-		lineY += lineGap;
-		drawMetricRow(graphics, font, x + 8, lineY, w - 16, "Add Walk Node", "P", 0xFFE2E8F0);
-		lineY += lineGap;
-		drawMetricRow(graphics, font, x + 8, lineY, w - 16, "Add Etherwarp", "I", 0xFFE2E8F0);
-		lineY += lineGap;
-		drawMetricRow(graphics, font, x + 8, lineY, w - 16, "Remove Last Node", "O", 0xFFEF4444);
-	}
-
 	private void drawMetricRow(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, String label, String value, int valColor) {
 		graphics.text(font, label + ":", x, y, 0xFF94A3B8, false);
 		int valW = font.width(value);
 		graphics.text(font, value, x + w - valW, y, valColor, false);
+	}
+
+	private void syncConfigFromKeyMappings() {
+		if (BlockMinerClient.getOpenConfigKey() instanceof KeyMappingAccessor acc) {
+			Config.openConfigKey = BlockMinerClient.getOpenConfigKey().isUnbound() ? -1 : acc.blockminer$getKey().getValue();
+		}
+		if (BlockMinerClient.getToggleMacroKey() instanceof KeyMappingAccessor acc) {
+			Config.toggleMacro = BlockMinerClient.getToggleMacroKey().isUnbound() ? -1 : acc.blockminer$getKey().getValue();
+		}
+		if (BlockMinerClient.getRouteBuilderKey() instanceof KeyMappingAccessor acc) {
+			Config.routeBuilder = BlockMinerClient.getRouteBuilderKey().isUnbound() ? -1 : acc.blockminer$getKey().getValue();
+		}
+		if (BlockMinerClient.getRouteBuilderAddWalkKey() instanceof KeyMappingAccessor acc) {
+			Config.routeBuilderWalkAddKeybind = BlockMinerClient.getRouteBuilderAddWalkKey().isUnbound() ? -1 : acc.blockminer$getKey().getValue();
+		}
+		if (BlockMinerClient.getRouteBuilderAddEtherwarpKey() instanceof KeyMappingAccessor acc) {
+			Config.routeBuilderEtherwarpAddKeybind = BlockMinerClient.getRouteBuilderAddEtherwarpKey().isUnbound() ? -1 : acc.blockminer$getKey().getValue();
+		}
+		if (BlockMinerClient.getRouteBuilderRemoveNodeKey() instanceof KeyMappingAccessor acc) {
+			Config.routeBuilderRemoveKeybind = BlockMinerClient.getRouteBuilderRemoveNodeKey().isUnbound() ? -1 : acc.blockminer$getKey().getValue();
+		}
+		saveConfigSafely();
 	}
 
 	@Override
@@ -1155,12 +1190,49 @@ public class BlockMinerScreen extends Screen {
 
 	@Override
 	public boolean keyPressed(KeyEvent event) {
-		if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT
+		if (selectedKeyForRebind != null) {
+			if (event.isEscape()) {
+				selectedKeyForRebind.setKey(InputConstants.UNKNOWN);
+				setStatus("Keybind cleared for " + selectedKeyForRebind.getName());
+			} else {
+				InputConstants.Key newKey = InputConstants.getKey(event);
+				selectedKeyForRebind.setKey(newKey);
+				setStatus("Keybind set: " + newKey.getDisplayName().getString());
+			}
+			selectedKeyForRebind = null;
+			KeyMapping.resetMapping();
+			if (minecraft != null && minecraft.options != null) {
+				minecraft.options.save();
+			}
+			syncConfigFromKeyMappings();
+			rebuildWidgets();
+			return true;
+		}
+
+		if (event.key() == GLFW.GLFW_KEY_ESCAPE
 				|| (BlockMinerClient.getOpenConfigKey() != null && BlockMinerClient.getOpenConfigKey().matches(event))) {
 			onClose();
 			return true;
 		}
 		return super.keyPressed(event);
+	}
+
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		if (selectedKeyForRebind != null) {
+			InputConstants.Key mouseKey = InputConstants.Type.MOUSE.getOrCreate(event.button());
+			selectedKeyForRebind.setKey(mouseKey);
+			setStatus("Keybind set to mouse button: " + mouseKey.getDisplayName().getString());
+			selectedKeyForRebind = null;
+			KeyMapping.resetMapping();
+			if (minecraft != null && minecraft.options != null) {
+				minecraft.options.save();
+			}
+			syncConfigFromKeyMappings();
+			rebuildWidgets();
+			return true;
+		}
+		return super.mouseClicked(event, doubleClick);
 	}
 
 	// ----------------------------------------------------
@@ -1412,6 +1484,60 @@ public class BlockMinerScreen extends Screen {
 		public void onClick(@NonNull MouseButtonEvent event, boolean doubleClick) {
 			playButtonClickSound(Minecraft.getInstance().getSoundManager());
 			onPress.accept(this);
+		}
+
+		@Override
+		protected void updateWidgetNarration(@NonNull NarrationElementOutput output) {
+			defaultButtonNarrationText(output);
+		}
+	}
+
+	public class ModernKeybindWidget extends AbstractWidget {
+		private final String label;
+		private final KeyMapping keyMapping;
+
+		public ModernKeybindWidget(int x, int y, int width, int height, String label, KeyMapping keyMapping) {
+			super(x, y, width, height, Component.literal(label));
+			this.label = label;
+			this.keyMapping = keyMapping;
+		}
+
+		@Override
+		protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+			Font font = Minecraft.getInstance().font;
+			boolean isSelected = (selectedKeyForRebind == keyMapping);
+			boolean hovered = isHovered();
+
+			// Left: Label
+			graphics.text(font, label + ":", getX() + 2, getY() + (getHeight() - 8) / 2, 0xFF94A3B8, false);
+
+			// Right: Key button box
+			String keyText = isSelected ? "> ??? <" : (keyMapping != null ? keyMapping.getTranslatedKeyMessage().getString() : "None");
+			int btnW = Math.max(76, font.width(keyText) + 12);
+			int btnX = getRight() - btnW;
+			int btnY = getY();
+			int btnH = getHeight();
+
+			int bg = isSelected ? 0xFF452205 : (hovered ? 0xFF2A354C : 0xFF181D27);
+			int border = isSelected ? 0xFFF59E0B : (hovered ? 0xFF00E5A8 : 0xFF2A3244);
+			int textCol = isSelected ? 0xFFFBBF24 : (hovered ? 0xFFFFFFFF : 0xFFE2E8F0);
+
+			graphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, bg);
+			graphics.outline(btnX, btnY, btnW, btnH, border);
+			graphics.centeredText(font, Component.literal(keyText), btnX + btnW / 2, btnY + (btnH - 8) / 2, textCol);
+		}
+
+		@Override
+		public void onClick(@NonNull MouseButtonEvent event, boolean doubleClick) {
+			playButtonClickSound(Minecraft.getInstance().getSoundManager());
+			if (selectedKeyForRebind == keyMapping) {
+				selectedKeyForRebind = null;
+				setStatus("Keybind assignment cancelled.");
+			} else {
+				selectedKeyForRebind = keyMapping;
+				setStatus("Press any key to bind " + label + " (Esc to clear)");
+			}
+			rebuildWidgets();
 		}
 
 		@Override

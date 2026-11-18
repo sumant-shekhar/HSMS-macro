@@ -7,9 +7,11 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class KeyBindUtil {
 	private static final Minecraft CLIENT = Minecraft.getInstance();
@@ -25,6 +27,7 @@ public final class KeyBindUtil {
 			CLIENT.options.keySprint
 	};
 	private static final Map<KeyMapping, Long> TIMED_RELEASES = new IdentityHashMap<>();
+	private static final Set<KeyMapping> BOT_HELD_KEYS = Collections.newSetFromMap(new IdentityHashMap<>());
 
 	private KeyBindUtil() {
 	}
@@ -41,6 +44,7 @@ public final class KeyBindUtil {
 		}
 
 		if (pressed && CLIENT.gui.screen() != null) {
+			BOT_HELD_KEYS.remove(key);
 			KeyMapping.set(boundKey, false);
 			key.setDown(false);
 			if (key instanceof KeyMappingAccessor accessor) {
@@ -51,6 +55,7 @@ public final class KeyBindUtil {
 		}
 
 		if (pressed) {
+			BOT_HELD_KEYS.add(key);
 			if (!key.isDown()) {
 				KeyMapping.click(boundKey);
 				if (key instanceof KeyMappingAccessor accessor && accessor.blockminer$getClickCount() == 0) {
@@ -60,6 +65,7 @@ public final class KeyBindUtil {
 			KeyMapping.set(boundKey, true);
 			key.setDown(true);
 		} else {
+			BOT_HELD_KEYS.remove(key);
 			KeyMapping.set(boundKey, false);
 			key.setDown(false);
 			if (key instanceof KeyMappingAccessor accessor) {
@@ -94,13 +100,14 @@ public final class KeyBindUtil {
 		for (KeyMapping key : ALL_KEYS) {
 			setKeyBindState(key, false);
 		}
+		BOT_HELD_KEYS.clear();
 		TIMED_RELEASES.clear();
 		KeyMapping.releaseAll();
 	}
 
 	public static void tick() {
 		if (CLIENT.gui.screen() != null) {
-			if (!areAllKeybindsReleased() || !TIMED_RELEASES.isEmpty()) {
+			if (!BOT_HELD_KEYS.isEmpty() || !TIMED_RELEASES.isEmpty()) {
 				stopMovement();
 			}
 			TIMED_RELEASES.clear();
@@ -166,22 +173,11 @@ public final class KeyBindUtil {
 	}
 
 	public static boolean areAllKeybindsReleased() {
-		for (KeyMapping key : ALL_KEYS) {
-			if (key.isDown()) {
-				return false;
-			}
-		}
-		return true;
+		return BOT_HELD_KEYS.isEmpty();
 	}
 
 	public static KeyMapping[] getHeldKeybinds() {
-		List<KeyMapping> held = new ArrayList<>();
-		for (KeyMapping key : ALL_KEYS) {
-			if (key.isDown()) {
-				held.add(key);
-			}
-		}
-		return held.toArray(KeyMapping[]::new);
+		return BOT_HELD_KEYS.toArray(KeyMapping[]::new);
 	}
 
 	public static List<KeyMapping> getNeededKeyPresses(Vec3 origin, Vec3 destination) {

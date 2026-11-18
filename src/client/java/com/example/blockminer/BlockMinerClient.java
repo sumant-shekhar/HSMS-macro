@@ -8,6 +8,7 @@ import com.example.blockminer.command.ConfigCommands;
 import com.example.blockminer.feature.impl.AutoChestUnlocker;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
 import com.example.blockminer.feature.impl.AutoMobKiller.AutoMobKiller;
+import com.example.blockminer.feature.impl.RouteBuilder;
 import com.example.blockminer.feature.impl.RouteNavigator;
 import com.example.blockminer.feature.FeatureManager;
 import com.example.blockminer.handler.RouteHandler;
@@ -21,6 +22,7 @@ import com.example.blockminer.macro.MacroManager;
 import com.example.blockminer.pathfinder.PathfindingDebugCommands;
 import com.example.blockminer.util.Strings;
 import com.example.blockminer.util.RenderUtil;
+import com.example.blockminer.util.helper.route.WaypointType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -53,7 +55,15 @@ public final class BlockMinerClient implements ClientModInitializer {
 	private static final String PICKOBULUS_MESSAGE = Strings.PICKOBULUS_AVAILABLE_CHAT;
 	private static final MinerState MINER = new MinerState();
 	private static int autoClickIntervalTicks = 100;
+	public static final KeyMapping.Category BLOCKMINER_CATEGORY =
+			KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MOD_ID, "main"));
+
 	private static KeyMapping openConfigKey;
+	private static KeyMapping toggleMacroKey;
+	private static KeyMapping routeBuilderKey;
+	private static KeyMapping routeBuilderAddWalkKey;
+	private static KeyMapping routeBuilderAddEtherwarpKey;
+	private static KeyMapping routeBuilderRemoveNodeKey;
 	private static KeyMapping routeNavigationKey;
 	private static KeyMapping getStatsKey;
 	private static boolean openConfigPending;
@@ -73,21 +83,56 @@ public final class BlockMinerClient implements ClientModInitializer {
 				"key.blockminer.open_config",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_RIGHT_SHIFT,
-				KeyMapping.Category.MISC
+				BLOCKMINER_CATEGORY
+		));
+
+		toggleMacroKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.toggle_macro",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_GRAVE_ACCENT,
+				BLOCKMINER_CATEGORY
+		));
+
+		routeBuilderKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.toggle_route_builder",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_LEFT_BRACKET,
+				BLOCKMINER_CATEGORY
+		));
+
+		routeBuilderAddWalkKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.route_builder_add_walk",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_P,
+				BLOCKMINER_CATEGORY
+		));
+
+		routeBuilderAddEtherwarpKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.route_builder_add_etherwarp",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_I,
+				BLOCKMINER_CATEGORY
+		));
+
+		routeBuilderRemoveNodeKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.blockminer.route_builder_remove_node",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_O,
+				BLOCKMINER_CATEGORY
 		));
 
 		routeNavigationKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.blockminer.toggle_route_navigation",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_UNKNOWN,
-				KeyMapping.Category.MISC
+				BLOCKMINER_CATEGORY
 		));
 
 		getStatsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.blockminer.retrieve_mining_stats",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_UNKNOWN,
-				KeyMapping.Category.MISC
+				BLOCKMINER_CATEGORY
 		));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -100,7 +145,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 			MINER.tick(client);
 			BlockMiner.getInstance().tick(client);
 			tickAutoClick(client);
-			if (openConfigKey.consumeClick()) {
+			while (openConfigKey.consumeClick()) {
 				if (client.gui.screen() == null) {
 					releaseAllKeys();
 					client.setScreenAndShow(new BlockMinerScreen());
@@ -108,7 +153,38 @@ public final class BlockMinerClient implements ClientModInitializer {
 					client.gui.screen().onClose();
 				}
 			}
-			if (routeNavigationKey.consumeClick()) {
+			while (toggleMacroKey.consumeClick()) {
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					MacroManager.getInstance().toggle();
+				}
+			}
+			while (routeBuilderKey.consumeClick()) {
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					RouteBuilder.getInstance().toggle();
+				}
+			}
+			while (routeBuilderAddWalkKey.consumeClick()) {
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					if (RouteBuilder.getInstance().isRunning()) {
+						RouteBuilder.getInstance().addToRoute(WaypointType.WALK);
+					}
+				}
+			}
+			while (routeBuilderAddEtherwarpKey.consumeClick()) {
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					if (RouteBuilder.getInstance().isRunning()) {
+						RouteBuilder.getInstance().addToRoute(WaypointType.ETHERWARP);
+					}
+				}
+			}
+			while (routeBuilderRemoveNodeKey.consumeClick()) {
+				if (client.player != null && client.level != null && client.gui.screen() == null) {
+					if (RouteBuilder.getInstance().isRunning()) {
+						RouteBuilder.getInstance().removeClosest();
+					}
+				}
+			}
+			while (routeNavigationKey.consumeClick()) {
 				if (client.player != null && client.level != null && client.gui.screen() == null) {
 					if (RouteNavigator.getInstance().isRunning()) {
 						RouteNavigator.getInstance().stop();
@@ -117,7 +193,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 					}
 				}
 			}
-			if (getStatsKey.consumeClick()) {
+			while (getStatsKey.consumeClick()) {
 				if (client.player != null && client.level != null && client.gui.screen() == null) {
 					AutoGetStats.getInstance().startDefaultTasks();
 				}
@@ -235,6 +311,34 @@ public final class BlockMinerClient implements ClientModInitializer {
 		return openConfigKey;
 	}
 
+	public static KeyMapping getToggleMacroKey() {
+		return toggleMacroKey;
+	}
+
+	public static KeyMapping getRouteBuilderKey() {
+		return routeBuilderKey;
+	}
+
+	public static KeyMapping getRouteBuilderAddWalkKey() {
+		return routeBuilderAddWalkKey;
+	}
+
+	public static KeyMapping getRouteBuilderAddEtherwarpKey() {
+		return routeBuilderAddEtherwarpKey;
+	}
+
+	public static KeyMapping getRouteBuilderRemoveNodeKey() {
+		return routeBuilderRemoveNodeKey;
+	}
+
+	public static KeyMapping getRouteNavigationKey() {
+		return routeNavigationKey;
+	}
+
+	public static KeyMapping getGetStatsKey() {
+		return getStatsKey;
+	}
+
 	public static void setLeftClick(boolean pressed) {
 		Minecraft client = Minecraft.getInstance();
 		if (client != null && client.options != null && client.options.keyAttack != null) {
@@ -267,13 +371,11 @@ public final class BlockMinerClient implements ClientModInitializer {
 			return false;
 		}
 
-		boolean matchesConfig = false;
-		if (openConfigKey != null && openConfigKey.matches(event)) {
-			matchesConfig = true;
-		} else if (event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT
-				|| (Config.openConfigKey != GLFW.GLFW_KEY_UNKNOWN && event.key() == Config.openConfigKey)) {
-			matchesConfig = true;
+		if (client.gui.screen() instanceof BlockMinerScreen screen && screen.isRebindingKey()) {
+			return false;
 		}
+
+		boolean matchesConfig = (openConfigKey != null && openConfigKey.matches(event));
 
 		if (matchesConfig) {
 			if (client.gui.screen() == null) {

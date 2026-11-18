@@ -131,7 +131,6 @@ public final class MinerState {
 		ClientLevel level = client.level;
 		LocalPlayer player = client.player;
 		if (!enabled) {
-			releaseMining();
 			return;
 		}
 
