@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import com.example.blockminer.MiningTargets.Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
-final class MinerState {
+public final class MinerState {
 	private static final Logger LOGGER = LoggerFactory.getLogger("blockminer");
 	private static final int STUCK_TIMEOUT_TICKS = 100;
 
@@ -31,6 +32,25 @@ final class MinerState {
 	private long clientTick;
 	private boolean mining;
 	private String searchReason = "no target in range (4 blocks)";
+	private Vec3 precisionAimPoint;
+	private long precisionAimExpireTick;
+
+	public void onParticle(net.minecraft.core.particles.ParticleType<?> type, double x, double y, double z) {
+		if ((!Config.precisionMining && !Config.precisionMiner) || target == null) {
+			return;
+		}
+		if (type == net.minecraft.core.particles.ParticleTypes.CRIT
+				|| type == net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER) {
+			Vec3 particle = new Vec3(x, y, z);
+			Vec3 blockCenter = Vec3.atCenterOf(target.position());
+			if (Math.abs(particle.x - blockCenter.x) <= 0.65
+					&& Math.abs(particle.y - blockCenter.y) <= 0.65
+					&& Math.abs(particle.z - blockCenter.z) <= 0.65) {
+				precisionAimPoint = particle;
+				precisionAimExpireTick = clientTick + 30;
+			}
+		}
+	}
 
 	static void setLeftClick(boolean pressed) {
 		BlockMinerClient.setLeftClick(pressed);
@@ -52,11 +72,11 @@ final class MinerState {
 		BlockMinerClient.releaseAllKeys();
 	}
 
-	boolean isEnabled() {
+	public boolean isEnabled() {
 		return enabled;
 	}
 
-	@NonNull String getStatus() {
+	public @NonNull String getStatus() {
 		if (target == null) {
 			return "Block Miner: ON | " + selectedMode.displayName() + " | " + searchReason;
 		}
@@ -66,11 +86,11 @@ final class MinerState {
 				+ " | " + position.getX() + " " + position.getY() + " " + position.getZ();
 	}
 
-	@NonNull Mode getSelectedMode() {
+	public @NonNull Mode getSelectedMode() {
 		return selectedMode;
 	}
 
-	void selectMode(Minecraft client, @NonNull Mode mode) {
+	public void selectMode(Minecraft client, @NonNull Mode mode) {
 		if (selectedMode != mode) {
 			selectedMode = mode;
 			blacklistUntilTick.clear();
@@ -78,7 +98,7 @@ final class MinerState {
 		}
 	}
 
-	void start(Minecraft client) {
+	public void start(Minecraft client) {
 		if (!enabled) {
 			LOGGER.info("[blockminer] mining started");
 		}
@@ -87,7 +107,7 @@ final class MinerState {
 		clearTarget(client);
 	}
 
-	void stop(Minecraft client) {
+	public void stop(Minecraft client) {
 		if (enabled) {
 			LOGGER.info("[blockminer] mining stopped");
 		}
@@ -97,7 +117,7 @@ final class MinerState {
 		releaseAllKeys();
 	}
 
-	boolean toggle(Minecraft client) {
+	public boolean toggle(Minecraft client) {
 		if (enabled) {
 			stop(client);
 		} else {
@@ -106,7 +126,7 @@ final class MinerState {
 		return enabled;
 	}
 
-	void tick(Minecraft client) {
+	public void tick(Minecraft client) {
 		ClientLevel level = client.level;
 		LocalPlayer player = client.player;
 		if (!enabled) {
@@ -123,7 +143,7 @@ final class MinerState {
 			clearTarget(client);
 
 			if (!(client.gui.screen() instanceof ChatScreen)
-					&& !(client.gui.screen() instanceof MinerSettingsScreen)) {
+					&& !(client.gui.screen() instanceof BlockMinerScreen)) {
 				stop(client);
 			}
 			return;
@@ -172,7 +192,16 @@ final class MinerState {
 			return;
 		}
 
-		boolean aimed = RotationHelper.rotateToward(player, target.aimPoint());
+		Vec3 aimPoint = target.aimPoint();
+		if ((Config.precisionMining || Config.precisionMiner) && precisionAimPoint != null) {
+			if (clientTick <= precisionAimExpireTick) {
+				aimPoint = precisionAimPoint;
+			} else {
+				precisionAimPoint = null;
+			}
+		}
+
+		boolean aimed = RotationHelper.rotateToward(player, aimPoint);
 
 		if (!aimed || !(client.hitResult instanceof BlockHitResult hit)
 				|| hit.getType() != HitResult.Type.BLOCK
@@ -201,6 +230,7 @@ final class MinerState {
 		releaseMining();
 		target = null;
 		ticksOnTarget = 0;
+		precisionAimPoint = null;
 	}
 
 	private void releaseMining() {

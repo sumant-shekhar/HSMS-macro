@@ -50,6 +50,29 @@ public final class KeyBindUtil {
 		TIMED_RELEASES.put(key, System.nanoTime() + durationMs * 1_000_000L);
 	}
 
+	public static void rightClick() {
+		if (CLIENT.options != null && CLIENT.options.keyUse != null) {
+			KeyMapping.click(CLIENT.options.keyUse.getDefaultKey());
+			pressFor(CLIENT.options.keyUse, 100L);
+		}
+	}
+
+	public static void leftClick() {
+		if (CLIENT.options != null && CLIENT.options.keyAttack != null) {
+			KeyMapping.click(CLIENT.options.keyAttack.getDefaultKey());
+			pressFor(CLIENT.options.keyAttack, 50L);
+		}
+	}
+
+	public static void releaseAll() {
+		stopMovement(false);
+		for (KeyMapping key : ALL_KEYS) {
+			setKeyBindState(key, false);
+		}
+		TIMED_RELEASES.clear();
+		KeyMapping.releaseAll();
+	}
+
 	public static void tick() {
 		if (CLIENT.gui.screen() != null) {
 			if (!areAllKeybindsReleased() || !TIMED_RELEASES.isEmpty()) {

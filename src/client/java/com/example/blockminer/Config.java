@@ -30,10 +30,21 @@ public final class Config {
 	public static double distanceCoefficient = 10.0D;
 	public static int tickGlideOffset = 0;
 	public static boolean sneakWhileMining = false;
-	// TODO(verify): precision crit-particle aiming needs a supported particle observation hook.
+	public static boolean autoChestUnlocker = true;
+	public static double chestSearchRadius = 8.0D;
+	public static int chestRotationMs = 250;
+	public static boolean chestAutoWalk = true;
+	public static int chestTimeoutSeconds = 12;
+	public static boolean precisionMining = false;
+	public static double precisionAimBias = 0.5D;
 	public static boolean precisionMiner = false;
 	public static boolean miscFullBlock = false;
 	public static boolean randomizedRotations = true;
+	public static float cameraSpeed = 4.0F;
+	public static double viewConeAngle = 90.0D;
+	public static boolean showChestTrackerHUD = true;
+	public static boolean autoClickerRightClick = true;
+	public static int autoClickerCPS = 5;
 	public static int waitThresholdMs = 2_000;
 	public static int defaultMiningSpeed = 600;
 	public static long minimumRotationTimeMs = 600L;
@@ -129,6 +140,8 @@ public final class Config {
 			throw new IllegalArgumentException("Config root must be a JSON object: " + path);
 		}
 		applyValues(decodeValues(root.getAsJsonObject()));
+		RotationHelper.setMaxStepPerTick(cameraSpeed);
+		MiningTargets.setMaxViewAngle(viewConeAngle);
 	}
 
 	public static void save() throws IOException {

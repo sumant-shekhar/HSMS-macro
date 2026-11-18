@@ -4,21 +4,21 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-final class RotationHelper {
+public final class RotationHelper {
 	private static float maxStepPerTick = 4.0F;
 
 	private RotationHelper() {
 	}
 
-	static float getMaxStepPerTick() {
+	public static float getMaxStepPerTick() {
 		return maxStepPerTick;
 	}
 
-	static void setMaxStepPerTick(float speed) {
+	public static void setMaxStepPerTick(float speed) {
 		maxStepPerTick = Mth.clamp(speed, 1.0F, 30.0F);
 	}
 
-	static boolean rotateToward(LocalPlayer player, Vec3 point) {
+	public static boolean rotateToward(LocalPlayer player, Vec3 point) {
 		Vec3 delta = point.subtract(player.getEyePosition());
 		double horizontalDistance = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
 		float wantedYaw = (float) (Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90.0);

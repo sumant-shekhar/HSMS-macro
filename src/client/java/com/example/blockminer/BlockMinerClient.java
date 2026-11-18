@@ -5,6 +5,7 @@ import com.example.blockminer.command.FeatureCommands;
 import com.example.blockminer.command.MacroCommands;
 import com.example.blockminer.command.RouteBuilderCommand;
 import com.example.blockminer.command.ConfigCommands;
+import com.example.blockminer.feature.impl.AutoChestUnlocker;
 import com.example.blockminer.feature.impl.AutoGetStats.AutoGetStats;
 import com.example.blockminer.feature.impl.AutoMobKiller.AutoMobKiller;
 import com.example.blockminer.feature.impl.RouteNavigator;
@@ -95,14 +96,15 @@ public final class BlockMinerClient implements ClientModInitializer {
 			KeyBindUtil.tick();
 			PathfindingDebugCommands.tick(client);
 			MacroManager.getInstance().onTick(client);
+			AutoChestUnlocker.getInstance().tick(client);
 			MINER.tick(client);
 			BlockMiner.getInstance().tick(client);
 			tickAutoClick(client);
 			if (openConfigKey.consumeClick()) {
 				if (client.gui.screen() == null) {
 					releaseAllKeys();
-					client.setScreenAndShow(new MinerSettingsScreen(MINER));
-				} else if (client.gui.screen() instanceof MinerSettingsScreen) {
+					client.setScreenAndShow(new BlockMinerScreen());
+				} else if (client.gui.screen() instanceof BlockMinerScreen) {
 					client.gui.screen().onClose();
 				}
 			}
@@ -124,7 +126,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 				openConfigPending = false;
 				if (client.gui.screen() == null) {
 					releaseAllKeys();
-					client.setScreenAndShow(new MinerSettingsScreen(MINER, openModePending));
+					client.setScreenAndShow(new BlockMinerScreen(openModePending ? BlockMinerScreen.Tab.MINING : BlockMinerScreen.Tab.DASHBOARD));
 				}
 				openModePending = false;
 			}
@@ -172,12 +174,14 @@ public final class BlockMinerClient implements ClientModInitializer {
 
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
 			MacroManager.getInstance().onChat(message.getString());
+			AutoChestUnlocker.getInstance().onChat(message.getString());
 			if (message.getString().contains(PICKOBULUS_MESSAGE)) {
 				rightClickWhenEnabled();
 			}
 		});
 		ClientReceiveMessageEvents.CHAT.register((message, playerChatMessage, sender, boundChatType, timeStamp) -> {
 			MacroManager.getInstance().onChat(message.getString());
+			AutoChestUnlocker.getInstance().onChat(message.getString());
 			if (message.getString().contains(PICKOBULUS_MESSAGE)) {
 				rightClickWhenEnabled();
 			}
@@ -284,9 +288,9 @@ public final class BlockMinerClient implements ClientModInitializer {
 		if (matchesConfig) {
 			if (client.gui.screen() == null) {
 				releaseAllKeys();
-				client.setScreenAndShow(new MinerSettingsScreen(MINER));
+				client.setScreenAndShow(new BlockMinerScreen());
 				return true;
-			} else if (client.gui.screen() instanceof MinerSettingsScreen) {
+			} else if (client.gui.screen() instanceof BlockMinerScreen) {
 				client.gui.screen().onClose();
 				return true;
 			}
@@ -296,6 +300,8 @@ public final class BlockMinerClient implements ClientModInitializer {
 
 	public static void stopAll(Minecraft client) {
 		MINER.stop(client);
+		AutoChestUnlocker.getInstance().stop();
+		KeyBindUtil.releaseAll();
 		releaseAllKeys();
 		MacroManager.getInstance().disable();
 		RouteNavigator.getInstance().stop();
@@ -324,7 +330,7 @@ public final class BlockMinerClient implements ClientModInitializer {
 		autoClickTicks = 0;
 		if (client.player != null) {
 			client.player.sendOverlayMessage(Component.literal(
-					"Auto click: " + (autoClickEnabled ? "ON (every 5s)" : "OFF")
+					"Auto click: " + (autoClickEnabled ? "ON" : "OFF")
 			));
 
 		}
@@ -336,7 +342,11 @@ public final class BlockMinerClient implements ClientModInitializer {
 		}
 		if (++autoClickTicks >= autoClickIntervalTicks) {
 			autoClickTicks = 0;
-			triggerRightClick();
+			if (Config.autoClickerRightClick) {
+				triggerRightClick();
+			} else {
+				triggerLeftClick();
+			}
 		}
 	}
 
